@@ -1,0 +1,7 @@
+--cpu Cortex-M4.fp
+"..\..\..\..\..\..\components\softdevice\s132\hex\main.o"
+--library_type=microlib --strict --scatter "..\..\..\..\..\..\components\softdevice\s132\hex\s132_nrf52_4.0.2_softdevice.sct"
+
+--diag_suppress 6330 --summary_stderr --info summarysizes --map --xref --callgraph --symbols
+--info sizes --info totals --info unused --info veneers
+--list ".\_build\s132_nrf52_4.0.2_softdevice.map" -o ..\..\..\..\..\..\components\softdevice\s132\hex\s132_nrf52_4.0.2_softdevice.hex
