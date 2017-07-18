@@ -351,7 +351,7 @@
               <MiscControls>--c99 --reduce_paths</MiscControls>
               <Define>BOARD_PCA10040 BSP_DEFINES_ONLY CONFIG_GPIO_AS_PINRESET NRF52 NRF52832_XXAA NRF52_PAN_12 NRF52_PAN_15 NRF52_PAN_20 NRF52_PAN_31 NRF52_PAN_36 NRF52_PAN_51 NRF52_PAN_54 NRF52_PAN_55 NRF52_PAN_58 NRF52_PAN_64 NRF52_PAN_74 SWI_DISABLE0</Define>
               <Undefine></Undefine>
-              <IncludePath>.\Device\nRF52;.\Device\nRF52\Drivers\delay;.\Device\nRF52\Core;.\Device\nRF52\Drivers\common;.\Library\util;.\config;.\Device\nRF52\SoftDevice\headers;.\Device\nRF52\Drivers\clock;.\Device\nRF52\Drivers\nrf_soc_nosd;.\Device\nRF52\Drivers\uart;.\Device\nRF52\Drivers\hal;.\Log;.\Log\src</IncludePath>
+              <IncludePath>.\config;.\Device\nRF52;.\Device\nRF52\Drivers\delay;.\Device\nRF52\Core;.\Device\nRF52\Drivers\common;.\Library\util;.\Device\nRF52\SoftDevice\headers;.\Device\nRF52\Drivers\clock;.\Device\nRF52\Drivers\nrf_soc_nosd;.\Device\nRF52\Drivers\uart;.\Device\nRF52\Drivers\hal;.\Log;.\Log\src;.\Device\nRF52\Drivers\spi_master;.\Device\nRF52\Drivers\gpiote;.\Board\NeoPixels</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -450,6 +450,16 @@
               <FileType>1</FileType>
               <FilePath>.\Device\nRF52\Drivers\uart\nrf_drv_uart.c</FilePath>
             </File>
+            <File>
+              <FileName>nrf_drv_spi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Device\nRF52\Drivers\spi_master\nrf_drv_spi.c</FilePath>
+            </File>
+            <File>
+              <FileName>nrf_drv_gpiote.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Device\nRF52\Drivers\gpiote\nrf_drv_gpiote.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -500,6 +510,21 @@
                 </FileArmAds>
               </FileOption>
             </File>
+            <File>
+              <FileName>app_error.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Library\util\app_error.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_error_weak.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Library\util\app_error_weak.c</FilePath>
+            </File>
+            <File>
+              <FileName>nrf_assert.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Library\util\nrf_assert.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -534,6 +559,21 @@
               <FileName>SEGGER_RTT_printf.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Debug\segger_rtt\SEGGER_RTT_printf.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Board</GroupName>
+          <Files>
+            <File>
+              <FileName>neopixels.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Board\neopixels\neopixels.c</FilePath>
+            </File>
+            <File>
+              <FileName>neopixels.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Board\neopixels\neopixels.h</FilePath>
             </File>
           </Files>
         </Group>

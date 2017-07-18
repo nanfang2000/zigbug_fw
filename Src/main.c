@@ -52,6 +52,21 @@
 #include <stdint.h>
 #include "nrf_delay.h"
 //#include "boards.h"
+#include "NeoPixels.h"
+
+static rgb_t       m_led_rgb_body[4];
+const led_group_t m_body_leds = 
+{
+	.out_pin = 14,
+	.led_num = 4,
+	.rgb_buf = (rgb_t*)&m_led_rgb_body,
+};
+rgb_t red = {255, 20, 20};
+rgb_t green = {20, 255, 20};
+rgb_t blue = {20, 255, 20};
+rgb_t white = {255, 255, 255};
+
+static const nrf_drv_spi_t neopixels_spi_instance = NRF_DRV_SPI_INSTANCE(SPI0_INSTANCE_INDEX);
 
 /**
  * @brief Function for application main entry.
@@ -60,15 +75,18 @@ int main(void)
 {
     /* Configure board. */
     //bsp_board_leds_init();
-
+		neopixel_init(&m_body_leds, 1, &neopixels_spi_instance);
+	
     /* Toggle LEDs. */
     while (true)
     {
-        for (int i = 0; i < 5; i++)
-        {
-            //bsp_board_led_invert(i);
-            nrf_delay_ms(500);
-        }
+        neopixels_write_rgb(&m_body_leds, 0, &white);
+				//bsp_board_led_invert(i);
+				nrf_delay_ms(500);
+				neopixels_write_rgb(&m_body_leds, 0, &white);
+				nrf_delay_ms(500);
+				neopixels_write_rgb(&m_body_leds, 0, &white);
+				nrf_delay_ms(500);
     }
 }
 
