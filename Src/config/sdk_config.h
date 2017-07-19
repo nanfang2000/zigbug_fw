@@ -653,21 +653,21 @@
 // <e> I2S_ENABLED - nrf_drv_i2s - I2S peripheral driver
 //==========================================================
 #ifndef I2S_ENABLED
-#define I2S_ENABLED 0
+#define I2S_ENABLED 1
 #endif
 #if  I2S_ENABLED
 // <o> I2S_CONFIG_SCK_PIN - SCK pin  <0-31> 
 
 
 #ifndef I2S_CONFIG_SCK_PIN
-#define I2S_CONFIG_SCK_PIN 31
+#define I2S_CONFIG_SCK_PIN 12
 #endif
 
 // <o> I2S_CONFIG_LRCK_PIN - LRCK pin  <1-31> 
 
 
 #ifndef I2S_CONFIG_LRCK_PIN
-#define I2S_CONFIG_LRCK_PIN 30
+#define I2S_CONFIG_LRCK_PIN 11
 #endif
 
 // <o> I2S_CONFIG_MCK_PIN - MCK pin 
@@ -679,14 +679,14 @@
 
 
 #ifndef I2S_CONFIG_SDOUT_PIN
-#define I2S_CONFIG_SDOUT_PIN 29
+#define I2S_CONFIG_SDOUT_PIN 15
 #endif
 
 // <o> I2S_CONFIG_SDIN_PIN - SDIN pin  <0-31> 
 
 
 #ifndef I2S_CONFIG_SDIN_PIN
-#define I2S_CONFIG_SDIN_PIN 28
+#define I2S_CONFIG_SDIN_PIN 255
 #endif
 
 // <o> I2S_CONFIG_MASTER  - Mode

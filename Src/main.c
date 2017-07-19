@@ -52,7 +52,8 @@
 #include <stdint.h>
 #include "nrf_delay.h"
 //#include "boards.h"
-#include "NeoPixels.h"
+#include "neopixels.h"
+#include "audio.h"
 
 static rgb_t       m_led_rgb_body[4];
 const led_group_t m_body_leds = 
@@ -67,7 +68,7 @@ rgb_t blue = {20, 255, 20};
 rgb_t white = {255, 255, 255};
 
 static const nrf_drv_spi_t neopixels_spi_instance = NRF_DRV_SPI_INSTANCE(SPI0_INSTANCE_INDEX);
-
+static const uint16_t audio_1[16000] = {0};
 /**
  * @brief Function for application main entry.
  */
@@ -76,6 +77,7 @@ int main(void)
     /* Configure board. */
     //bsp_board_leds_init();
 		neopixel_init(&m_body_leds, 1, &neopixels_spi_instance);
+		audio_init();
 	
     /* Toggle LEDs. */
     while (true)
@@ -87,6 +89,7 @@ int main(void)
 				nrf_delay_ms(500);
 				neopixels_write_rgb(&m_body_leds, 0, &white);
 				nrf_delay_ms(500);
+				audio_play(audio_1, 16000);
     }
 }
 
