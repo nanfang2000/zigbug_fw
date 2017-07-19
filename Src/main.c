@@ -68,7 +68,7 @@ rgb_t blue = {20, 255, 20};
 rgb_t white = {255, 255, 255};
 
 static const nrf_drv_spi_t neopixels_spi_instance = NRF_DRV_SPI_INSTANCE(SPI0_INSTANCE_INDEX);
-static const uint16_t audio_1[16000] = {0};
+#include "wav_1.h"
 /**
  * @brief Function for application main entry.
  */
@@ -82,14 +82,14 @@ int main(void)
     /* Toggle LEDs. */
     while (true)
     {
+        /*neopixels_write_rgb(&m_body_leds, 0, &white);
+        //bsp_board_led_invert(i);
+        nrf_delay_ms(500);
         neopixels_write_rgb(&m_body_leds, 0, &white);
-				//bsp_board_led_invert(i);
-				nrf_delay_ms(500);
-				neopixels_write_rgb(&m_body_leds, 0, &white);
-				nrf_delay_ms(500);
-				neopixels_write_rgb(&m_body_leds, 0, &white);
-				nrf_delay_ms(500);
-				audio_play(audio_1, 16000);
+        nrf_delay_ms(500);
+        neopixels_write_rgb(&m_body_leds, 0, &white);*/
+        nrf_delay_ms(500);
+        audio_play(DATA, SOUND_LENGTH);
     }
 }
 

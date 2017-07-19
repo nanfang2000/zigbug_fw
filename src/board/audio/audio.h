@@ -8,7 +8,7 @@ extern "C" {
 
 void audio_init(void);
 
-void audio_play(const uint16_t * p_audio_data, uint16_t audio_length);
+void audio_play(const uint8_t * p_audio_data, uint16_t audio_length);
 
 void audio_stop(void);
 	

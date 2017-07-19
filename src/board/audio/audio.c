@@ -31,52 +31,68 @@ static nrf_drv_i2s_config_t m_i2s_config =
 };
 
 #define I2S_BUFFER_SIZE     1000
+
+#define AUDIO_STATE_IDLE			(0)
+#define AUDIO_STATE_PLAYING		(1)
+#define AUDIO_STATE_FINISH		(2)
+
 static uint32_t m_buffer_tx[I2S_BUFFER_SIZE];
 
-static volatile uint8_t  m_blocks_transferred     = 0;
-static          uint16_t m_sample_value_to_send;
-
-static const uint16_t *m_audio_data;
+static const uint8_t *m_audio_data;
 static uint16_t m_audio_length;
-static uint16_t m_audio_index;
+static volatile uint16_t m_audio_index;
+static volatile uint16_t m_audio_state = AUDIO_STATE_IDLE;
 
 static void i2s_event_handler(uint32_t const * p_data_received,
-															uint32_t       * p_data_to_send,
-															uint16_t         number_of_words)
+							  uint32_t       * p_data_to_send,
+							  uint16_t         number_of_words)
 {
-	  if (m_blocks_transferred == 0)
+    uint16_t i;
+    if(m_audio_index < m_audio_length)
     {
-        m_sample_value_to_send   = 0xCAFE;
+        m_audio_state = AUDIO_STATE_PLAYING;
+        for (i = 0; i < number_of_words; ++i)
+        {
+            if(m_audio_index < m_audio_length)
+            {
+                ((uint16_t *)p_data_to_send)[i]     = (uint16_t)m_audio_data[m_audio_index++]<<8;
+            }
+            else
+            {
+                ((uint16_t *)p_data_to_send)[i]     = 0;
+            }
+        }
     }
-	  uint16_t i;
-    for (i = 0; i < number_of_words; ++i)
+    else
     {
-        ((uint16_t *)p_data_to_send)[i]     = m_sample_value_to_send;
-        ++m_sample_value_to_send;
+        m_audio_state = AUDIO_STATE_FINISH;
     }
-		m_blocks_transferred++;
-    NRF_LOG_INFO("Transfer completed.\r\n");
+
+    NRF_LOG_INFO("Transfer completed:%d\r\n", m_audio_index);
 }
 
 void audio_init(void)
 {
 	APP_ERROR_CHECK(nrf_drv_i2s_init(&m_i2s_config, i2s_event_handler));
+	m_audio_state = AUDIO_STATE_IDLE;
 }
 
-void audio_play(const uint16_t * p_audio_data, uint16_t audio_length)
+void audio_play(const uint8_t * p_audio_data, uint16_t audio_length)
 {
-	if(audio_length == 0)
+    if(audio_length == 0)
 		return;
+	
 	m_audio_data = p_audio_data;
 	m_audio_length = audio_length;
 	m_audio_index = 0;
 	
-	int32_t blocks_need_transfer = (audio_length + I2S_BUFFER_SIZE - 1)/I2S_BUFFER_SIZE;
-	blocks_need_transfer += 1;/* ???, don't know when the last block transfer finished, so transfer more block */
-	m_blocks_transferred = 0;
 	APP_ERROR_CHECK(nrf_drv_i2s_start(NULL, m_buffer_tx, I2S_BUFFER_SIZE, 0));
-	while(m_blocks_transferred < blocks_need_transfer);
+	/* Wait for finish */
+	while(m_audio_index < m_audio_length);
+	
 	nrf_drv_i2s_stop();
+	
+	m_audio_state = AUDIO_STATE_IDLE;
 }
 
 
