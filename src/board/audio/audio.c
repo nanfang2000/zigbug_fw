@@ -1,5 +1,6 @@
 #include "audio.h"
 #include "nrf_drv_i2s.h"
+#include "nrf_drv_gpiote.h"
 #include "app_util_platform.h"
 #include "nrf_gpio.h"
 #include "nrf_delay.h"
@@ -36,6 +37,8 @@ static nrf_drv_i2s_config_t m_i2s_config =
 #define AUDIO_STATE_PLAYING		(1)
 #define AUDIO_STATE_FINISH		(2)
 
+#define AUDIO_CTRL_PIN				(23)
+
 static uint32_t m_buffer_tx[I2S_BUFFER_SIZE];
 
 static const uint8_t *m_audio_data;
@@ -55,12 +58,15 @@ static void i2s_event_handler(uint32_t const * p_data_received,
         {
             if(m_audio_index < m_audio_length)
             {
-                ((uint16_t *)p_data_to_send)[i]     = (uint16_t)m_audio_data[m_audio_index++]<<8;
+                ((uint16_t *)p_data_to_send)[2*i]     = (uint16_t)m_audio_data[m_audio_index++]<<8;
+								((uint16_t *)p_data_to_send)[2*i+1]     = (uint16_t)m_audio_data[m_audio_index++]<<8;
             }
             else
             {
-                ((uint16_t *)p_data_to_send)[i]     = 0;
+                ((uint16_t *)p_data_to_send)[2*i]     = 0x5555;
+								((uint16_t *)p_data_to_send)[2*i+1]     = 0x5555;
             }
+						//m_audio_index++;
         }
     }
     else
@@ -73,8 +79,26 @@ static void i2s_event_handler(uint32_t const * p_data_received,
 
 void audio_init(void)
 {
-	APP_ERROR_CHECK(nrf_drv_i2s_init(&m_i2s_config, i2s_event_handler));
-	m_audio_state = AUDIO_STATE_IDLE;
+    nrf_drv_gpiote_out_config_t audio_ctrl_pin_config = GPIOTE_CONFIG_OUT_SIMPLE(false);
+
+    APP_ERROR_CHECK(nrf_drv_gpiote_out_init(AUDIO_CTRL_PIN, &audio_ctrl_pin_config));
+
+    if(!nrf_drv_gpiote_is_init())
+    {
+        APP_ERROR_CHECK(nrf_drv_gpiote_init());
+    }
+    APP_ERROR_CHECK(nrf_drv_i2s_init(&m_i2s_config, i2s_event_handler));
+    m_audio_state = AUDIO_STATE_IDLE;
+}
+
+void audio_enable(void)
+{
+	nrf_drv_gpiote_out_set(AUDIO_CTRL_PIN);
+}
+
+void audio_disable(void)
+{
+	nrf_drv_gpiote_out_clear(AUDIO_CTRL_PIN);
 }
 
 void audio_play(const uint8_t * p_audio_data, uint16_t audio_length)
@@ -86,11 +110,17 @@ void audio_play(const uint8_t * p_audio_data, uint16_t audio_length)
 	m_audio_length = audio_length;
 	m_audio_index = 0;
 	
+	/* Enable Audio chip */
+	nrf_drv_gpiote_out_set(AUDIO_CTRL_PIN);
+		
 	APP_ERROR_CHECK(nrf_drv_i2s_start(NULL, m_buffer_tx, I2S_BUFFER_SIZE, 0));
 	/* Wait for finish */
 	while(m_audio_index < m_audio_length);
 	
 	nrf_drv_i2s_stop();
+		
+	/* Disable Audio chip */
+	nrf_drv_gpiote_out_clear(AUDIO_CTRL_PIN);
 	
 	m_audio_state = AUDIO_STATE_IDLE;
 }
@@ -99,4 +129,6 @@ void audio_play(const uint8_t * p_audio_data, uint16_t audio_length)
 void audio_stop(void)
 {
 	nrf_drv_i2s_stop();
+	/* Disable Audio chip */
+	nrf_drv_gpiote_out_clear(AUDIO_CTRL_PIN);
 }

@@ -54,6 +54,8 @@
 //#include "boards.h"
 #include "neopixels.h"
 #include "audio.h"
+#include "app_error.h"
+#include "nrf_drv_gpiote.h"
 
 static rgb_t       m_led_rgb_body[4];
 const led_group_t m_body_leds = 
@@ -69,6 +71,18 @@ rgb_t white = {255, 255, 255};
 
 static const nrf_drv_spi_t neopixels_spi_instance = NRF_DRV_SPI_INSTANCE(SPI0_INSTANCE_INDEX);
 #include "wav_1.h"
+
+uint32_t error_code;
+void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
+{
+    #ifdef DEBUG
+    app_error_print(id, pc, info);
+    #endif
+		error_code = ((error_info_t *)(info))->err_code;
+		UNUSED_VARIABLE(error_code);
+    while (1);
+}
+
 /**
  * @brief Function for application main entry.
  */
@@ -76,6 +90,7 @@ int main(void)
 {
     /* Configure board. */
     //bsp_board_leds_init();
+		nrf_drv_gpiote_init();
 		neopixel_init(&m_body_leds, 1, &neopixels_spi_instance);
 		audio_init();
 	
@@ -88,7 +103,7 @@ int main(void)
         neopixels_write_rgb(&m_body_leds, 0, &white);
         nrf_delay_ms(500);
         neopixels_write_rgb(&m_body_leds, 0, &white);*/
-        nrf_delay_ms(500);
+        nrf_delay_ms(5000);
         audio_play(DATA, SOUND_LENGTH);
     }
 }
