@@ -263,7 +263,7 @@ ret_code_t nrf_drv_i2s_start(uint32_t * p_rx_buffer,
         // to that moment.
         if (m_cb.synchronized_mode)
         {
-            memset(m_cb.p_tx_buffer, 0, buffer_size);
+            memset(m_cb.p_tx_buffer, 0, buffer_size*sizeof(uint32_t));
         }
         else
         {
