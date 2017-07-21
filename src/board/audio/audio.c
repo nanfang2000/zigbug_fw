@@ -33,9 +33,16 @@ static nrf_drv_i2s_config_t m_i2s_config =
 
 #define I2S_BUFFER_SIZE     1000
 
-#define AUDIO_STATE_IDLE			(0)
-#define AUDIO_STATE_PLAYING		(1)
-#define AUDIO_STATE_FINISH		(2)
+/**
+ * @brief Driver state.
+ */
+typedef enum
+{
+    AUDIO_STATE_IDLE, /* Idle */
+    AUDIO_STATE_PLAYING, /* Is transferring */
+    AUDIO_STATE_FINISHING, /* Is finishing */
+    AUDIO_STATE_FINISHED /* finished */
+} audio_state_t;
 
 #define AUDIO_CTRL_PIN				(23)
 
@@ -44,50 +51,70 @@ static uint32_t m_buffer_tx[I2S_BUFFER_SIZE];
 static const uint8_t *m_audio_data;
 static uint16_t m_audio_length;
 static volatile uint16_t m_audio_index;
-static volatile uint16_t m_audio_state = AUDIO_STATE_IDLE;
+static volatile audio_state_t m_audio_state = AUDIO_STATE_IDLE;
 
 static void i2s_event_handler(uint32_t const * p_data_received,
 							  uint32_t       * p_data_to_send,
 							  uint16_t         number_of_words)
 {
     uint16_t i;
-    if(m_audio_index < m_audio_length)
+    switch (m_audio_state)
     {
-        m_audio_state = AUDIO_STATE_PLAYING;
-        for (i = 0; i < number_of_words; ++i)
-        {
+        case AUDIO_STATE_IDLE:break;
+        case AUDIO_STATE_PLAYING:
             if(m_audio_index < m_audio_length)
             {
-                ((uint16_t *)p_data_to_send)[2*i]     = (uint16_t)m_audio_data[m_audio_index++]<<8;
-				((uint16_t *)p_data_to_send)[2*i+1]     = (uint16_t)m_audio_data[m_audio_index++]<<8;
+                m_audio_state = AUDIO_STATE_PLAYING;
+                for (i = 0; i < number_of_words; ++i)
+                {
+                    if(m_audio_index < m_audio_length)
+                    {
+                        ((uint16_t *)p_data_to_send)[2*i]     = (uint16_t)m_audio_data[m_audio_index++]<<8;
+                        ((uint16_t *)p_data_to_send)[2*i+1]   = (uint16_t)m_audio_data[m_audio_index++]<<8;
+                    }
+                    else
+                    {
+                        ((uint16_t *)p_data_to_send)[2*i]     = 0;
+                        ((uint16_t *)p_data_to_send)[2*i+1]   = 0;
+                    }
+                }
             }
             else
             {
-                ((uint16_t *)p_data_to_send)[2*i]     = 0x5555;
-				((uint16_t *)p_data_to_send)[2*i+1]     = 0x5555;
+                /* Last valid block has or about to start, so fill zero data for next block 
+                to ensure audio silence */
+                memset(p_data_to_send, 0, number_of_words*sizeof(uint32_t));
+                m_audio_state = AUDIO_STATE_FINISHING;
             }
-						//m_audio_index++;
-        }
-    }
-    else
-    {
-        m_audio_state = AUDIO_STATE_FINISH;
-    }
+            break;
+         case AUDIO_STATE_FINISHING:
+            /* Last valid block has finished, set audio state for main context to stop I2S;
+            so fill zero data for one more block to ensure audio silence.
+            Now both half buffer are empty to make sure audio silence */
+            memset(p_data_to_send, 0, number_of_words*sizeof(uint32_t));
+            m_audio_state = AUDIO_STATE_FINISHED;
+            break;
+         case AUDIO_STATE_FINISHED:break;
+         default:break;
+     }
 
     NRF_LOG_INFO("Transfer completed:%d\r\n", m_audio_index);
 }
 
 void audio_init(void)
 {
-    nrf_drv_gpiote_out_config_t audio_ctrl_pin_config = GPIOTE_CONFIG_OUT_SIMPLE(false);
-
-    APP_ERROR_CHECK(nrf_drv_gpiote_out_init(AUDIO_CTRL_PIN, &audio_ctrl_pin_config));
-
+    /* If not initialized gpiote model, init is */
     if(!nrf_drv_gpiote_is_init())
     {
         APP_ERROR_CHECK(nrf_drv_gpiote_init());
     }
+    
+    nrf_drv_gpiote_out_config_t audio_ctrl_pin_config = GPIOTE_CONFIG_OUT_SIMPLE(false);
+
+    APP_ERROR_CHECK(nrf_drv_gpiote_out_init(AUDIO_CTRL_PIN, &audio_ctrl_pin_config));
+
     APP_ERROR_CHECK(nrf_drv_i2s_init(&m_i2s_config, i2s_event_handler));
+    
     m_audio_state = AUDIO_STATE_IDLE;
 }
 
@@ -110,12 +137,13 @@ void audio_play(const uint8_t * p_audio_data, uint16_t audio_length)
 	m_audio_length = audio_length;
 	m_audio_index = 0;
 	
+    m_audio_state = AUDIO_STATE_PLAYING;
 	/* Enable Audio chip */
 	nrf_drv_gpiote_out_set(AUDIO_CTRL_PIN);
 		
 	APP_ERROR_CHECK(nrf_drv_i2s_start(NULL, m_buffer_tx, I2S_BUFFER_SIZE, 0));
 	/* Wait for finish */
-	while(m_audio_index < m_audio_length);
+	while(m_audio_state != AUDIO_STATE_FINISHED);
 	
 	nrf_drv_i2s_stop();
 		
@@ -131,4 +159,6 @@ void audio_stop(void)
 	nrf_drv_i2s_stop();
 	/* Disable Audio chip */
 	nrf_drv_gpiote_out_clear(AUDIO_CTRL_PIN);
+    
+    m_audio_state = AUDIO_STATE_IDLE;
 }
