@@ -90,9 +90,9 @@ int main(void)
 {
     /* Configure board. */
     //bsp_board_leds_init();
-		nrf_drv_gpiote_init();
-		neopixel_init(&m_body_leds, 1, &neopixels_spi_instance);
-		audio_init();
+    nrf_drv_gpiote_init();
+    //neopixel_init(&m_body_leds, 1, &neopixels_spi_instance);
+    audio_init();
 	
     /* Toggle LEDs. */
     while (true)
@@ -103,7 +103,7 @@ int main(void)
         neopixels_write_rgb(&m_body_leds, 0, &white);
         nrf_delay_ms(500);
         neopixels_write_rgb(&m_body_leds, 0, &white);*/
-        nrf_delay_ms(5000);
+        nrf_delay_ms(1000);
         audio_play(DATA, SOUND_LENGTH);
     }
 }

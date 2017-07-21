@@ -23,12 +23,12 @@ static nrf_drv_i2s_config_t m_i2s_config =
     .sdin_pin     = I2S_CONFIG_SDIN_PIN,     \
     .irq_priority = I2S_CONFIG_IRQ_PRIORITY, \
     .mode         = NRF_I2S_MODE_MASTER,       \
-    .format       = NRF_I2S_FORMAT_I2S,       \
+    .format       = NRF_I2S_FORMAT_ALIGNED,       \
     .alignment    = NRF_I2S_ALIGN_LEFT,        \
     .sample_width = NRF_I2S_SWIDTH_16BIT,       \
     .channels     = NRF_I2S_CHANNELS_LEFT,     \
     .mck_setup    = NRF_I2S_MCK_32MDIV21,   \
-    .ratio        = NRF_I2S_RATIO_96X,        \
+    .ratio        = NRF_I2S_RATIO_64X,        \
 };
 
 #define I2S_BUFFER_SIZE     1000
