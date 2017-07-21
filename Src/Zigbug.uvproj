@@ -411,14 +411,14 @@
           <GroupName>Device</GroupName>
           <Files>
             <File>
-              <FileName>system_nrf51.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Device\nRF52\Core\system_nrf51.c</FilePath>
-            </File>
-            <File>
               <FileName>arm_startup_nrf52.s</FileName>
               <FileType>2</FileType>
               <FilePath>.\Device\nRF52\Core\arm\arm_startup_nrf52.s</FilePath>
+            </File>
+            <File>
+              <FileName>system_nrf52.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\device\nRF52\Core\system_nrf52.c</FilePath>
             </File>
           </Files>
         </Group>
