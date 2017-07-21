@@ -59,12 +59,12 @@ static void i2s_event_handler(uint32_t const * p_data_received,
             if(m_audio_index < m_audio_length)
             {
                 ((uint16_t *)p_data_to_send)[2*i]     = (uint16_t)m_audio_data[m_audio_index++]<<8;
-								((uint16_t *)p_data_to_send)[2*i+1]     = (uint16_t)m_audio_data[m_audio_index++]<<8;
+				((uint16_t *)p_data_to_send)[2*i+1]     = (uint16_t)m_audio_data[m_audio_index++]<<8;
             }
             else
             {
                 ((uint16_t *)p_data_to_send)[2*i]     = 0x5555;
-								((uint16_t *)p_data_to_send)[2*i+1]     = 0x5555;
+				((uint16_t *)p_data_to_send)[2*i+1]     = 0x5555;
             }
 						//m_audio_index++;
         }

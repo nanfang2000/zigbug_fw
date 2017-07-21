@@ -70,20 +70,20 @@ static void neopixel_select_group(const led_group_t * led_group)
 
 static void neopixels_fill_spi_buf(uint8_t color, uint8_t *spi_buffer)
 {
-		for(uint8_t i_rgb = 0; i_rgb < 8; i_rgb++)
-		{
-			switch(color & 0x80 )
-			{
-				case ( 0x00 ):
-					*spi_buffer = CODE_0;
-					break;
-				case ( 0x80 ):
-					*spi_buffer = CODE_1;
-					break;
-			}
-			spi_buffer++;
-			color <<= 1;
-		}
+    for(uint8_t i_rgb = 0; i_rgb < 8; i_rgb++)
+    {
+        switch(color & 0x80 )
+        {
+            case ( 0x00 ):
+                *spi_buffer = CODE_0;
+                break;
+            case ( 0x80 ):
+                *spi_buffer = CODE_1;
+                break;
+        }
+        spi_buffer++;
+        color <<= 1;
+    }
 }
 
 void neopixels_write_rgb(const led_group_t * led_group, int32_t index, const rgb_t *rgb)
