@@ -44,8 +44,16 @@
         <configuration Name="Internal" build_exclude_from_build="Yes" />
       </file>
       <file file_name="./device/nRF52/Core/system_nrf52.c" />
-      <file file_name="device/nRF52/Core/ses/ses_nrf52_startup.s" />
-      <file file_name="$(StudioDir)/source/thumb_crt0.s" />
+      <file file_name="device/nRF52/Core/ses/ses_nrf52_startup.s">
+        <configuration
+          Name="nrf52832_xxaa External"
+          build_exclude_from_build="Yes" />
+      </file>
+      <file file_name="$(StudioDir)/source/thumb_crt0.s">
+        <configuration
+          Name="nrf52832_xxaa External"
+          build_exclude_from_build="Yes" />
+      </file>
     </folder>
     <folder Name="nRF_Drivers">
       <file file_name="./Device/nRF52/Drivers/clock/nrf_drv_clock.c" />
