@@ -56,6 +56,8 @@
 #include "audio.h"
 #include "app_error.h"
 #include "nrf_drv_gpiote.h"
+#include "SEGGER_RTT_Conf.h"
+#include "SEGGER_RTT.h"
 
 static rgb_t       m_led_rgb_body[4];
 const led_group_t m_body_leds = 
@@ -105,6 +107,7 @@ int main(void)
         neopixels_write_rgb(&m_body_leds, 0, &white);*/
         nrf_delay_ms(1000);
         audio_play(DATA, SOUND_LENGTH);
+        SEGGER_RTT_printf(0,"replay\n");
     }
 }
 
