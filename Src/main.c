@@ -80,8 +80,8 @@ void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
     #ifdef DEBUG
     app_error_print(id, pc, info);
     #endif
-		error_code = ((error_info_t *)(info))->err_code;
-		UNUSED_VARIABLE(error_code);
+    error_code = ((error_info_t *)(info))->err_code;
+    UNUSED_VARIABLE(error_code);
     while (1);
 }
 
@@ -107,7 +107,7 @@ int main(void)
         neopixels_write_rgb(&m_body_leds, 0, &white);*/
         nrf_delay_ms(1000);
         audio_play(DATA, SOUND_LENGTH);
-        SEGGER_RTT_printf(0,"replay\n");
+        SEGGER_RTT_printf(0, "replay\n");
     }
 }
 

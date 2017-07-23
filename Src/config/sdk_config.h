@@ -989,7 +989,7 @@
 // <e> PDM_ENABLED - nrf_drv_pdm - PDM peripheral driver
 //==========================================================
 #ifndef PDM_ENABLED
-#define PDM_ENABLED 0
+#define PDM_ENABLED 1
 #endif
 #if  PDM_ENABLED
 // <o> PDM_CONFIG_MODE  - Mode
