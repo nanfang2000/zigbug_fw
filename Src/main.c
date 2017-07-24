@@ -54,6 +54,7 @@
 //#include "boards.h"
 #include "neopixels.h"
 #include "audio.h"
+#include "mic.h"
 #include "app_error.h"
 #include "nrf_drv_gpiote.h"
 #include "SEGGER_RTT_Conf.h"
@@ -73,6 +74,7 @@ rgb_t white = {255, 255, 255};
 
 static const nrf_drv_spi_t neopixels_spi_instance = NRF_DRV_SPI_INSTANCE(SPI0_INSTANCE_INDEX);
 #include "wav_1.h"
+static uint32_t listen_buffer[8192];
 
 uint32_t error_code;
 void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
@@ -95,7 +97,8 @@ int main(void)
     nrf_drv_gpiote_init();
     //neopixel_init(&m_body_leds, 1, &neopixels_spi_instance);
     audio_init();
-	
+    mic_init();
+ 	
     /* Toggle LEDs. */
     while (true)
     {
@@ -106,8 +109,9 @@ int main(void)
         nrf_delay_ms(500);
         neopixels_write_rgb(&m_body_leds, 0, &white);*/
         nrf_delay_ms(1000);
-        audio_play(DATA, SOUND_LENGTH);
+        //audio_play(DATA, SOUND_LENGTH);
         SEGGER_RTT_printf(0, "replay\n");
+        mic_listen(listen_buffer, 200);
     }
 }
 

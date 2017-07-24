@@ -9,6 +9,7 @@ extern "C" {
 void mic_init(void);
 void mic_start(void);
 void mic_stop(void);
+void mic_listen(uint32_t *rx_buffer, uint32_t micro_seconds);
 
 #ifdef  __cplusplus
 }  

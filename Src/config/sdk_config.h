@@ -998,7 +998,7 @@
 // <1=> Mono 
 
 #ifndef PDM_CONFIG_MODE
-#define PDM_CONFIG_MODE 1
+#define PDM_CONFIG_MODE 0
 #endif
 
 // <o> PDM_CONFIG_EDGE  - Edge

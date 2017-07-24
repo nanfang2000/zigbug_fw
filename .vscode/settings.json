@@ -1,0 +1,14 @@
+{
+    "files.associations": {
+        "nrf_delay.h": "c",
+        "app_error.h": "c",
+        "stdint.h": "c",
+        "_uint32_t.h": "c",
+        "nrf_saadc.h": "c",
+        "nrf_drv_pdm.h": "c",
+        "nrf_pwm.h": "c",
+        "nrf_qspi.h": "c",
+        "nrf_pdm.h": "c",
+        "sdk_config.h": "c"
+    }
+}
