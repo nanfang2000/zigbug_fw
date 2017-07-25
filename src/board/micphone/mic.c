@@ -8,7 +8,7 @@
 #include "app_error.h"
 #include "nrf_drv_pdm.h"
 
-#define PDM_PIN_CLK			(0)
+#define PDM_PIN_CLK			(30)
 #define PDM_PIN_DIN			(20)
 #define PDM_BUFFER_SIZE		(1000)
 
@@ -21,13 +21,18 @@ const nrf_drv_pdm_config_t m_pdm_config = NRF_DRV_PDM_DEFAULT_CONFIG(PDM_PIN_CLK
 
 static uint16_t *m_listen_data;
 static uint32_t m_listen_msec;
+static uint32_t m_listen_channel;
 static volatile uint16_t m_listen_index;
 //static volatile audio_state_t m_audio_state = AUDIO_STATE_IDLE;
 
 static void pdm_event_handler(uint32_t * buffer, uint16_t length)
 {
-	memcpy(&m_listen_data[m_listen_index], buffer, length*sizeof(uint16_t));
-    m_listen_index += length;
+	int32_t i;
+    length /= 2;
+	for(i = 0; i < length; i++)
+	{
+		m_listen_data[m_listen_index++] = (uint16_t)(buffer[i] & 0xFFFF);
+	}
 }
 
 void mic_init(void)
@@ -46,10 +51,11 @@ void mic_stop(void)
 	APP_ERROR_CHECK(nrf_drv_pdm_stop());
 }
 
-void mic_listen(uint32_t *rx_buffer, uint32_t micro_seconds)
+void mic_listen(uint8_t channel,uint16_t *rx_buffer, uint32_t micro_seconds)
 {
 	m_listen_data = (uint16_t *)rx_buffer;
 	m_listen_index = 0;
+	m_listen_channel = channel;
 	mic_start();
 	nrf_delay_ms(micro_seconds);
 	mic_stop();
