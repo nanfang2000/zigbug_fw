@@ -64,6 +64,7 @@
       <file file_name="./Device/nRF52/Drivers/spi_master/nrf_drv_spi.c" />
       <file file_name="./Device/nRF52/Drivers/gpiote/nrf_drv_gpiote.c" />
       <file file_name="./Device/nRF52/Drivers/i2s/nrf_drv_i2s.c" />
+      <file file_name="Device/nRF52/Drivers/pdm/nrf_drv_pdm.c" />
     </folder>
     <folder Name="nRF_Libraries">
       <file file_name="./Library/util/app_util_platform.c" />
@@ -85,6 +86,8 @@
       <file file_name="./Board/neopixels/neopixels.h" />
       <file file_name="./board/audio/audio.c" />
       <file file_name="./board/audio/audio.h" />
+      <file file_name="Board/micphone/mic.c" />
+      <file file_name="Board/micphone/mic.h" />
     </folder>
     <configuration
       Name="nrf52832_xxaa Internal"
@@ -113,6 +116,10 @@
     inherited_configurations="External Keil;nrf52832_xxaa" />
   <configuration
     Name="nrf52832_xxaa Internal"
+    arm_architecture="v7M"
+    arm_core_type="Cortex-M4"
+    arm_fp_abi="Hard"
+    arm_fpu_type="FPv4-SP-D16"
     inherited_configurations="Internal;nrf52832_xxaa" />
   <configuration Name="nrf52832_xxaa" hidden="Yes" />
 </solution>
