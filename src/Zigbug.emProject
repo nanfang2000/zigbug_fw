@@ -17,43 +17,25 @@
       linker_section_placements_segments="FLASH RX 0x00000000 0x00080000;SRAM RWX 0x20000000 0x00010000"
       project_directory=""
       project_type="Executable" />
-    <configuration
-      Name="Internal"
-      build_intermediate_directory="Output/$(ProjectName) $(Configuration)/Obj"
-      build_output_directory="Output/$(Configuration)/Exe"
-      build_output_file_name="$(OutDir)/$(ProjectName)$(EXE)" />
-    <configuration
-      Name="External Keil"
-      c_additional_options="--c99;--reduce_paths"
-      linker_additional_options="--diag_suppress;6330"
-      project_type="Externally Built Executable" />
+    <folder Name="Internal Files">
+      <file file_name="$(StudioDir)/source/thumb_crt0.s" />
+    </folder>
     <configuration
       Name="nrf52832_xxaa"
-      build_intermediate_directory="./_build"
-      build_output_directory="./_build"
-      build_output_file_name="$(OutDir)/nrf52832_xxaa.axf"
-      c_preprocessor_definitions="BOARD_PCA10040;BSP_DEFINES_ONLY;CONFIG_GPIO_AS_PINRESET;NRF52;NRF52832_XXAA;NRF52_PAN_12;NRF52_PAN_15;NRF52_PAN_20;NRF52_PAN_31;NRF52_PAN_36;NRF52_PAN_51;NRF52_PAN_54;NRF52_PAN_55;NRF52_PAN_58;NRF52_PAN_64;NRF52_PAN_74;SWI_DISABLE0"
-      c_user_include_directories="$(PackagesDir)/CMSIS_4/CMSIS/Include;./config;./Device/nRF52;./Device/nRF52/Drivers/delay;./Device/nRF52/Core;./Device/nRF52/Drivers/common;./Library/util;./Device/nRF52/SoftDevice/headers;./Device/nRF52/Drivers/clock;./Device/nRF52/Drivers/nrf_soc_nosd;./Device/nRF52/Drivers/uart;./Device/nRF52/Drivers/hal;./Log;./Log/src;./Device/nRF52/Drivers/spi_master;./Device/nRF52/Drivers/gpiote;./Board/NeoPixels;./Device/nRF52/Drivers/i2s;./board/audio" />
+      c_preprocessor_definitions="BOARD_PCA10040;BSP_DEFINES_ONLY;CONFIG_GPIO_AS_PINRESET;NRF52;NRF52832_XXAA;NRF52_PAN_12;NRF52_PAN_15;NRF52_PAN_20;NRF52_PAN_31;NRF52_PAN_36;NRF52_PAN_51;NRF52_PAN_54;NRF52_PAN_55;NRF52_PAN_58;NRF52_PAN_64;NRF52_PAN_74;SWI_DISABLE0;NRF_LOG_USES_RTT=1"
+      c_user_include_directories="$(PackagesDir)/CMSIS_4/CMSIS/Include;./config;./Device/nRF52;./Device/nRF52/Drivers/delay;./Device/nRF52/Core;./Device/nRF52/Drivers/common;./Library/util;./Device/nRF52/SoftDevice/headers;./Device/nRF52/Drivers/clock;./Device/nRF52/Drivers/nrf_soc_nosd;./Device/nRF52/Drivers/uart;./Device/nRF52/Drivers/hal;./Log;./Log/src;./Device/nRF52/Drivers/spi_master;./Device/nRF52/Drivers/gpiote;./Board/NeoPixels;./Device/nRF52/Drivers/i2s;./board/audio;./Debug/segger_rtt;./board/micphone;./device/nRF52/Drivers/pdm"
+      cpp_enable_rtti="Yes" />
+    <configuration
+      Name="External Keil"
+      c_additional_options="--c99;--reduce_paths" />
     <folder Name="Application">
       <file file_name="./config/sdk_config.h" />
       <file file_name="./main.c" />
     </folder>
     <folder Name="Board Definition" />
     <folder Name="Device">
-      <file file_name="./Device/nRF52/Core/arm/arm_startup_nrf52.s">
-        <configuration Name="Internal" build_exclude_from_build="Yes" />
-      </file>
       <file file_name="./device/nRF52/Core/system_nrf52.c" />
-      <file file_name="device/nRF52/Core/ses/ses_nrf52_startup.s">
-        <configuration
-          Name="nrf52832_xxaa External"
-          build_exclude_from_build="Yes" />
-      </file>
-      <file file_name="$(StudioDir)/source/thumb_crt0.s">
-        <configuration
-          Name="nrf52832_xxaa External"
-          build_exclude_from_build="Yes" />
-      </file>
+      <file file_name="device/nRF52/Core/ses/ses_nrf52_startup.s" />
     </folder>
     <folder Name="nRF_Drivers">
       <file file_name="./Device/nRF52/Drivers/clock/nrf_drv_clock.c" />
@@ -64,7 +46,7 @@
       <file file_name="./Device/nRF52/Drivers/spi_master/nrf_drv_spi.c" />
       <file file_name="./Device/nRF52/Drivers/gpiote/nrf_drv_gpiote.c" />
       <file file_name="./Device/nRF52/Drivers/i2s/nrf_drv_i2s.c" />
-      <file file_name="Device/nRF52/Drivers/pdm/nrf_drv_pdm.c" />
+      <file file_name="./device/nRF52/Drivers/pdm/nrf_drv_pdm.c" />
     </folder>
     <folder Name="nRF_Libraries">
       <file file_name="./Library/util/app_util_platform.c" />
@@ -78,7 +60,6 @@
     </folder>
     <folder Name="nRF_Segger_RTT">
       <file file_name="./Debug/segger_rtt/SEGGER_RTT.c" />
-      <file file_name="./Debug/segger_rtt/RTT_Syscalls_KEIL.c" />
       <file file_name="./Debug/segger_rtt/SEGGER_RTT_printf.c" />
     </folder>
     <folder Name="Board">
@@ -86,40 +67,10 @@
       <file file_name="./Board/neopixels/neopixels.h" />
       <file file_name="./board/audio/audio.c" />
       <file file_name="./board/audio/audio.h" />
-      <file file_name="Board/micphone/mic.c" />
-      <file file_name="Board/micphone/mic.h" />
-    </folder>
-    <configuration
-      Name="nrf52832_xxaa Internal"
-      gcc_entry_point="reset_handler" />
-    <folder Name="System Files">
-      <file file_name="flash_placement.xml" />
+      <file file_name="./board/micphone/mic.c" />
+      <file file_name="./board/micphone/mic.h" />
     </folder>
   </project>
-  <configuration
-    Name="External Keil"
-    asm_additional_options="--cpu;$(CoreType);--cpreproc"
-    c_additional_options="--cpu;$(CoreType);--fpu;$(FPU2);-g"
-    external_archive_command="&quot;$(KEIL_TOOLKIT_DIR)/ARMCC/bin/armar&quot; -rs &quot;$(RelTargetPath)&quot; $(Objects)"
-    external_assemble_command="&quot;$(KEIL_TOOLKIT_DIR)/ARMCC/bin/armasm&quot; $(AsmOptions) &quot;$(RelInputPath)&quot; -o &quot;$(RelTargetPath)&quot; --diag_style=gnu --brief_diagnostics"
-    external_c_compile_command="&quot;$(KEIL_TOOLKIT_DIR)/ARMCC/bin/armcc&quot; -c $(COptions) $(COnlyOptions) $(Defines) $(Includes) &quot;$(RelInputPath)&quot; --depend_single_line --depend=&quot;$(RelDependencyPath)&quot; --depend-format=unix_escaped --diag_style=gnu --brief_diagnostics -o &quot;$(RelTargetPath)&quot;"
-    external_cpp_compile_command="&quot;$(KEIL_TOOLKIT_DIR)/ARMCC/bin/armcc&quot; --cpp -c $(COptions) $(CppOnlyOptions) $(Defines) $(Includes) &quot;$(RelInputPath)&quot; --depend_single_line --depend=&quot;$(RelDependencyPath)&quot; --depend-format=unix_escaped --diag_style=gnu --brief_diagnostics -o &quot;$(RelTargetPath)&quot;"
-    external_link_command="&quot;$(KEIL_TOOLKIT_DIR)/ARMCC/bin/armlink&quot; $(LinkOptions) --scatter=&quot;$(RelLinkerScriptPath)&quot; $(Objects) -o &quot;$(RelTargetPath)&quot; --list &quot;$(RelMapPath)&quot; --map"
-    hidden="Yes"
-    linker_additional_options="--cpu;$(CoreType);--fpu;$(FPU2)"
-    linker_post_build_command="&quot;$(KEIL_TOOLKIT_DIR)/ARMCC/bin/fromelf&quot; --i32 --output=&quot;$(PostLinkOutputFilePath)&quot; &quot;$(RelTargetPath)&quot;"
-    linker_post_build_command_output_file="$(OutDir)/$(ProjectName).hex"
-    macros="KEIL_TOOLKIT_DIR=C:/Keil_v5/ARM" />
   <configuration Name="Internal" hidden="Yes" />
-  <configuration
-    Name="nrf52832_xxaa External"
-    inherited_configurations="External Keil;nrf52832_xxaa" />
-  <configuration
-    Name="nrf52832_xxaa Internal"
-    arm_architecture="v7M"
-    arm_core_type="Cortex-M4"
-    arm_fp_abi="Hard"
-    arm_fpu_type="FPv4-SP-D16"
-    inherited_configurations="Internal;nrf52832_xxaa" />
-  <configuration Name="nrf52832_xxaa" hidden="Yes" />
+  <configuration Name="nrf52832_xxaa" inherited_configurations="Internal" />
 </solution>
