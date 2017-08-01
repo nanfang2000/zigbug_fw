@@ -9,3 +9,5 @@ src/Zigbug.uvgui_HeWei.bak
 ._.DS_Store
 .DS_Store
 src/Zigbug.emSession
+src/Zigbug_nrf52832_xxaa.jlink
+src/.vscode/

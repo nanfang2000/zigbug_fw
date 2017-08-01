@@ -74,7 +74,7 @@ rgb_t white = {255, 255, 255};
 
 static const nrf_drv_spi_t neopixels_spi_instance = NRF_DRV_SPI_INSTANCE(SPI0_INSTANCE_INDEX);
 #include "wav_1.h"
-static uint16_t listen_buffer[16000];
+static uint16_t listen_buffer[26000];
 
 uint32_t error_code;
 void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
@@ -111,7 +111,7 @@ int main(void)
         nrf_delay_ms(1000);
         //audio_play(DATA, SOUND_LENGTH);
         SEGGER_RTT_printf(0, "replay\n");
-        mic_listen(0, listen_buffer, 200);
+        mic_listen(0, listen_buffer, 2000);
     }
 }
 
