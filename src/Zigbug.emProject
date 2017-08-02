@@ -23,7 +23,7 @@
     <configuration
       Name="nrf52832_xxaa"
       c_preprocessor_definitions="BOARD_PCA10040;BSP_DEFINES_ONLY;CONFIG_GPIO_AS_PINRESET;NRF52;NRF52832_XXAA;NRF52_PAN_12;NRF52_PAN_15;NRF52_PAN_20;NRF52_PAN_31;NRF52_PAN_36;NRF52_PAN_51;NRF52_PAN_54;NRF52_PAN_55;NRF52_PAN_58;NRF52_PAN_64;NRF52_PAN_74;SWI_DISABLE0;NRF_LOG_USES_RTT=1"
-      c_user_include_directories="$(PackagesDir)/CMSIS_4/CMSIS/Include;./config;./Device/nRF52;./Device/nRF52/Drivers/delay;./Device/nRF52/Core;./Device/nRF52/Drivers/common;./Library/util;./Device/nRF52/SoftDevice/headers;./Device/nRF52/Drivers/clock;./Device/nRF52/Drivers/nrf_soc_nosd;./Device/nRF52/Drivers/uart;./Device/nRF52/Drivers/hal;./Log;./Log/src;./Device/nRF52/Drivers/spi_master;./Device/nRF52/Drivers/gpiote;./Board/NeoPixels;./Device/nRF52/Drivers/i2s;./board/audio;./Debug/segger_rtt;./board/micphone;./device/nRF52/Drivers/pdm;./device/nRF52/Drivers/pwm;./board/motor"
+      c_user_include_directories="$(PackagesDir)/CMSIS_4/CMSIS/Include;./config;./Device/nRF52;./Device/nRF52/Drivers/delay;./Device/nRF52/Core;./Device/nRF52/Drivers/common;./Library/util;./Device/nRF52/SoftDevice/headers;./Device/nRF52/Drivers/clock;./Device/nRF52/Drivers/nrf_soc_nosd;./Device/nRF52/Drivers/uart;./Device/nRF52/Drivers/hal;./Log;./Log/src;./Device/nRF52/Drivers/spi_master;./Device/nRF52/Drivers/gpiote;./Board/NeoPixels;./Device/nRF52/Drivers/i2s;./board/audio;./Debug/segger_rtt;./board/micphone;./device/nRF52/Drivers/pdm;./device/nRF52/Drivers/pwm;./device/nRF52/Drivers/saadc;./board/motor;./board/battery;./Library/timer;./Library/scheduler"
       cpp_enable_rtti="Yes" />
     <configuration
       Name="External Keil"
@@ -48,12 +48,16 @@
       <file file_name="./Device/nRF52/Drivers/i2s/nrf_drv_i2s.c" />
       <file file_name="./device/nRF52/Drivers/pdm/nrf_drv_pdm.c" />
       <file file_name="device/nRF52/Drivers/pwm/nrf_drv_pwm.c" />
+      <file file_name="device/nRF52/Drivers/saadc/nrf_drv_saadc.c" />
+      <file file_name="device/nRF52/Drivers/hal/nrf_saadc.c" />
     </folder>
     <folder Name="nRF_Libraries">
       <file file_name="./Library/util/app_util_platform.c" />
       <file file_name="./Library/util/app_error.c" />
       <file file_name="./Library/util/app_error_weak.c" />
       <file file_name="./Library/util/nrf_assert.c" />
+      <file file_name="library/timer/app_timer.c" />
+      <file file_name="library/scheduler/app_scheduler.c" />
     </folder>
     <folder Name="nRF_Log">
       <file file_name="./Log/src/nrf_log_backend_serial.c" />
@@ -72,6 +76,10 @@
       <file file_name="./board/micphone/mic.h" />
       <file file_name="board/motor/motor.c" />
       <file file_name="board/motor/motor.h" />
+      <file file_name="board/battery/batt_meas.c">
+        <configuration Name="nrf52832_xxaa" build_exclude_from_build="No" />
+      </file>
+      <file file_name="board/battery/batt_meas.h" />
     </folder>
   </project>
   <configuration Name="Internal" hidden="Yes" />

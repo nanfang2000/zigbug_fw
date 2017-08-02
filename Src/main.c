@@ -55,10 +55,12 @@
 #include "neopixels.h"
 #include "audio.h"
 #include "mic.h"
+#include "batt_meas.h"
 #include "app_error.h"
 #include "nrf_drv_gpiote.h"
-#include "SEGGER_RTT_Conf.h"
-#include "SEGGER_RTT.h"
+
+#define LOCAL_DEBUG
+#include "debug.h"
 
 static rgb_t       m_led_rgb_body[4];
 const led_group_t m_body_leds = 
@@ -92,12 +94,15 @@ void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
  */
 int main(void)
 {
+    app_timer_init();
     /* Configure board. */
     //bsp_board_leds_init();
     nrf_drv_gpiote_init();
     //neopixel_init(&m_body_leds, 1, &neopixels_spi_instance);
     audio_init();
     mic_init();
+    batt_meas_init(NULL);
+    batt_meas_enable(5000);
  	
     /* Toggle LEDs. */
     while (true)
@@ -109,9 +114,9 @@ int main(void)
         nrf_delay_ms(500);
         neopixels_write_rgb(&m_body_leds, 0, &white);*/
         nrf_delay_ms(1000);
-        //audio_play(DATA, SOUND_LENGTH);
-        SEGGER_RTT_printf(0, "replay\n");
-        mic_listen(0, listen_buffer, 2000);
+        audio_play(DATA, SOUND_LENGTH);
+        DEBUG_PRINTF(0, "Battery:%d%%\n", batt_meas_get_level());
+       // mic_listen(0, listen_buffer, 2000);
     }
 }
 

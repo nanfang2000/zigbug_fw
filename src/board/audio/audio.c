@@ -141,26 +141,21 @@ void audio_play(const uint8_t *p_audio_data, uint16_t audio_length)
 
     m_audio_state = AUDIO_STATE_PLAYING;
     /* Enable Audio chip */
-    nrf_drv_gpiote_out_set(AUDIO_CTRL_PIN);
+    audio_enable();
 
     APP_ERROR_CHECK(nrf_drv_i2s_start(NULL, m_buffer_tx, I2S_BUFFER_SIZE, 0));
     /* Wait for finish */
     while (m_audio_state != AUDIO_STATE_FINISHED)
         ;
 
-    nrf_drv_i2s_stop();
-
-    /* Disable Audio chip */
-    nrf_drv_gpiote_out_clear(AUDIO_CTRL_PIN);
-
-    m_audio_state = AUDIO_STATE_IDLE;
+    audio_stop();
 }
 
 void audio_stop(void)
 {
     nrf_drv_i2s_stop();
     /* Disable Audio chip */
-    nrf_drv_gpiote_out_clear(AUDIO_CTRL_PIN);
+    audio_disable();
 
     m_audio_state = AUDIO_STATE_IDLE;
 }

@@ -60,8 +60,8 @@ void motor_init(void)
 
     nrf_drv_gpiote_out_config_t motor_left_dir_pin_config = GPIOTE_CONFIG_OUT_SIMPLE(false);
     nrf_drv_gpiote_out_config_t motor_right_dir_pin_config = GPIOTE_CONFIG_OUT_SIMPLE(false);
-    APP_ERROR_CHECK(nrf_drv_gpiote_out_init(CONFIG_MOTOR_LEFT_DIR, &audio_ctrl_pin_config));
-    APP_ERROR_CHECK(nrf_drv_gpiote_out_init(CONFIG_MOTOR_RIGHT_DIR, &audio_ctrl_pin_config));
+    APP_ERROR_CHECK(nrf_drv_gpiote_out_init(CONFIG_MOTOR_LEFT_DIR, &motor_left_dir_pin_config));
+    APP_ERROR_CHECK(nrf_drv_gpiote_out_init(CONFIG_MOTOR_RIGHT_DIR, &motor_right_dir_pin_config));
 
     APP_ERROR_CHECK(nrf_drv_pwm_init(&m_pwm_instance_left, &m_pwm_left_config, NULL));
     APP_ERROR_CHECK(nrf_drv_pwm_init(&m_pwm_instance_right, &m_pwm_right_config, NULL));
