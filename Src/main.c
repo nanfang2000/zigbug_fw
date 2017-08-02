@@ -57,10 +57,16 @@
 #include "mic.h"
 #include "batt_meas.h"
 #include "app_error.h"
+#include "app_timer.h"
+#include "app_scheduler.h"
 #include "nrf_drv_gpiote.h"
 
 #define LOCAL_DEBUG
 #include "debug.h"
+
+#define DEAD_BEEF   0xDEADBEEF          /**< Value used as error code on stack dump, can be used to identify stack location on stack unwind. */
+#define SCHED_MAX_EVENT_DATA_SIZE   MAX(APP_TIMER_SCHED_EVENT_DATA_SIZE, 0) 
+#define SCHED_QUEUE_SIZE            60  /**< Maximum number of events in the scheduler queue. */
 
 static rgb_t       m_led_rgb_body[4];
 const led_group_t m_body_leds = 
@@ -94,6 +100,7 @@ void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
  */
 int main(void)
 {
+    APP_SCHED_INIT(SCHED_MAX_EVENT_DATA_SIZE, SCHED_QUEUE_SIZE);
     app_timer_init();
     /* Configure board. */
     //bsp_board_leds_init();
@@ -113,10 +120,11 @@ int main(void)
         neopixels_write_rgb(&m_body_leds, 0, &white);
         nrf_delay_ms(500);
         neopixels_write_rgb(&m_body_leds, 0, &white);*/
-        nrf_delay_ms(1000);
-        audio_play(DATA, SOUND_LENGTH);
-        DEBUG_PRINTF(0, "Battery:%d%%\n", batt_meas_get_level());
+        //nrf_delay_ms(1000);
+        //audio_play(DATA, SOUND_LENGTH);
+        //DEBUG_PRINTF(0, "Battery:%d%%\n", batt_meas_get_level());
        // mic_listen(0, listen_buffer, 2000);
+       app_sched_execute();
     }
 }
 

@@ -92,7 +92,6 @@ static const batt_meas_param_t m_batt_meas_param =
 static ble_bas_t                    m_bas;                          // Structure to identify the battery service.
 #endif
 static batt_meas_event_handler_t    m_evt_handler;                  // Event handler function pointer.
-static batt_meas_param_t            batt_meas_param;              // Battery parameters.
 static float                        battery_divider_factor;       //
 static nrf_saadc_value_t            m_buffer[ADC_BUF_SIZE];         //
 static volatile bool                m_adc_cal_in_progress;          //
@@ -138,18 +137,18 @@ static uint32_t adc_gain_enum_to_real_gain(nrf_saadc_gain_t gain_reg, float * re
  */
 static void batt_voltage_to_percent(uint16_t voltage_mv, uint8_t * const battery_level_percent)
 {
-    if (voltage_mv >= batt_meas_param.batt_voltage_limit_full)
+    if (voltage_mv >= m_batt_meas_param.batt_voltage_limit_full)
     {
         *battery_level_percent = 100;
     }
-    else if (voltage_mv <= batt_meas_param.batt_voltage_limit_low)
+    else if (voltage_mv <= m_batt_meas_param.batt_voltage_limit_low)
     {
         *battery_level_percent = 0;
     }
     else
     {
-        *battery_level_percent = (100 * (voltage_mv - batt_meas_param.batt_voltage_limit_low) /
-                                 (batt_meas_param.batt_voltage_limit_full - batt_meas_param.batt_voltage_limit_low));
+        *battery_level_percent = (100 * (voltage_mv - m_batt_meas_param.batt_voltage_limit_low) /
+                                 (m_batt_meas_param.batt_voltage_limit_full - m_batt_meas_param.batt_voltage_limit_low));
     }
 }
 
@@ -201,11 +200,11 @@ static void batt_event_handler_adc(void * p_event_data, uint16_t size)
     memcpy(&batt_meas_evt.voltage_mv, p_event_data, size);
     batt_meas_evt.valid_voltage = true;
 
-    if (batt_meas_evt.voltage_mv <= batt_meas_param.batt_voltage_limit_low)
+    if (batt_meas_evt.voltage_mv <= m_batt_meas_param.batt_voltage_limit_low)
     {
         batt_meas_evt.type = BATT_MEAS_EVENT_LOW;
     }
-    else if (batt_meas_evt.voltage_mv >= batt_meas_param.batt_voltage_limit_full)
+    else if (batt_meas_evt.voltage_mv >= m_batt_meas_param.batt_voltage_limit_full)
     {
         batt_meas_evt.type = BATT_MEAS_EVENT_FULL;
     }
@@ -277,9 +276,9 @@ static void gpiote_evt_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t u
     batt_meas_event_type_t event_source;
 
     /* Read status of battery charge associated pins. */
-    if (nrf_gpio_pin_read(batt_meas_param.usb_detect_pin_no))
+    if (nrf_gpio_pin_read(m_batt_meas_param.usb_detect_pin_no))
     {
-        if (nrf_gpio_pin_read(batt_meas_param.batt_chg_stat_pin_no))
+        if (nrf_gpio_pin_read(m_batt_meas_param.batt_chg_stat_pin_no))
         {
             event_source = BATT_MEAS_EVENT_USB_CONN_CHARGING_FINISHED;
         }
@@ -336,7 +335,7 @@ static uint32_t saadc_init(void)
     RETURN_IF_ERROR(err_code);
 
     nrf_saadc_channel_config_t channel_config =
-    NRF_DRV_SAADC_DEFAULT_CHANNEL_CONFIG_SE(batt_meas_param.adc_pin_no);
+    NRF_DRV_SAADC_DEFAULT_CHANNEL_CONFIG_SE(m_batt_meas_param.adc_pin_no);
 
     /* Burst enabled to oversample the SAADC. */
     channel_config.burst    = NRF_SAADC_BURST_ENABLED;
@@ -418,12 +417,12 @@ static uint32_t gpiote_init(void)
         gpiote_in_config.pull        = NRF_GPIO_PIN_NOPULL;
         gpiote_in_config.sense       = NRF_GPIOTE_POLARITY_TOGGLE;
 
-    err_code = nrf_drv_gpiote_in_init(batt_meas_param.usb_detect_pin_no,
+    err_code = nrf_drv_gpiote_in_init(m_batt_meas_param.usb_detect_pin_no,
                                       &gpiote_in_config, gpiote_evt_handler);
     APP_ERROR_CHECK(err_code);
 
-    nrf_drv_gpiote_in_event_enable(batt_meas_param.usb_detect_pin_no, true);
-    nrf_drv_gpiote_in_event_enable(batt_meas_param.batt_chg_stat_pin_no, true);
+    nrf_drv_gpiote_in_event_enable(m_batt_meas_param.usb_detect_pin_no, true);
+    nrf_drv_gpiote_in_event_enable(m_batt_meas_param.batt_chg_stat_pin_no, true);
 
     return NRF_SUCCESS;
 }
@@ -514,9 +513,9 @@ uint32_t batt_meas_enable(uint32_t meas_interval_ms)
         return BATT_STATUS_CODE_INVALID_PARAM;
     }
 
-    if (batt_meas_param.batt_mon_en_pin_used)
+    if (m_batt_meas_param.batt_mon_en_pin_used)
     {
-//        err_code = drv_ext_gpio_pin_set(batt_meas_param.batt_mon_en_pin_no);     // Enable battery monitoring.
+//        err_code = drv_ext_gpio_pin_set(m_batt_meas_param.batt_mon_en_pin_no);     // Enable battery monitoring.
 //        RETURN_IF_ERROR(err_code);
     }
 
@@ -540,10 +539,10 @@ uint32_t batt_meas_disable(void)
 {
     uint32_t err_code;
 
-    if (batt_meas_param.batt_mon_en_pin_used)
+    if (m_batt_meas_param.batt_mon_en_pin_used)
     {
-        err_code = drv_ext_gpio_pin_clear(batt_meas_param.batt_mon_en_pin_no);     // Disable battery monitoring to save power.
-        RETURN_IF_ERROR(err_code);
+//        err_code = drv_ext_gpio_pin_clear(m_batt_meas_param.batt_mon_en_pin_no);     // Disable battery monitoring to save power.
+//        RETURN_IF_ERROR(err_code);
     }
 
     err_code = app_timer_stop(batt_meas_app_timer_id);
@@ -601,7 +600,7 @@ uint32_t batt_meas_init(batt_meas_event_handler_t event_handler)
 
     m_evt_handler = event_handler;
 
-    if (batt_meas_param.batt_mon_en_pin_used)
+    if (m_batt_meas_param.batt_mon_en_pin_used)
     {
         // err_code = drv_ext_gpio_cfg_output(m_batt_meas_param.batt_mon_en_pin_no);
         // RETURN_IF_ERROR(err_code);
@@ -614,8 +613,8 @@ uint32_t batt_meas_init(batt_meas_event_handler_t event_handler)
     nrf_gpio_cfg_input(m_batt_meas_param.usb_detect_pin_no,    NRF_GPIO_PIN_NOPULL);
     nrf_gpio_cfg_input(m_batt_meas_param.adc_pin_no,           NRF_GPIO_PIN_NOPULL);
 
-    err_code = gpiote_init();
-    RETURN_IF_ERROR(err_code);
+    // err_code = gpiote_init();
+    // RETURN_IF_ERROR(err_code);
 
     err_code = saadc_calibrate();
     RETURN_IF_ERROR(err_code);
