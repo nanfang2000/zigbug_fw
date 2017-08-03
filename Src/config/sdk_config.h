@@ -1873,7 +1873,7 @@
 // <8=> 256x 
 
 #ifndef SAADC_CONFIG_OVERSAMPLE
-#define SAADC_CONFIG_OVERSAMPLE 0
+#define SAADC_CONFIG_OVERSAMPLE 8
 #endif
 
 // <q> SAADC_CONFIG_LP_MODE  - Enabling low power mode
@@ -3102,7 +3102,7 @@
  
 
 #ifndef APP_TIMER_CONFIG_USE_SCHEDULER
-#define APP_TIMER_CONFIG_USE_SCHEDULER 1
+#define APP_TIMER_CONFIG_USE_SCHEDULER 0
 #endif
 
 // <q> APP_TIMER_WITH_PROFILER  - Enable app_timer profiling

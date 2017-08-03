@@ -51,12 +51,13 @@
 #include <stdint.h>
 #include <string.h>
 
+#define BATT_MEAS_DEBUG
 #ifdef BATT_MEAS_DEBUG
     #define LOCAL_DEBUG
 #endif
 #include "debug.h"
 
-#define ADC_GAIN                    NRF_SAADC_GAIN1     // ADC gain.
+#define ADC_GAIN                    NRF_SAADC_GAIN1_6     // ADC gain.
 #define ADC_REFERENCE_VOLTAGE       (0.6f)              // The standard internal ADC reference voltage.
 #define ADC_RESOLUTION_BITS         (8 + (SAADC_CONFIG_RESOLUTION * 2)) //ADC resolution [bits].
 #define ADC_BUF_SIZE                (1)                 // Size of each ADC buffer.
@@ -70,8 +71,8 @@
 #define BAT_MON_EN_PIN_USED             false
 #define BAT_MON_EN_PIN_NO               BATT_MEAS_INVALID_PIN
 #define BATT_MEAS_ADC_PIN_NO            NRF_SAADC_INPUT_AIN0
-#define BATT_VOLTAGE_DIVIDER_R1         1500000
-#define BATT_VOLTAGE_DIVIDER_R2         180000
+#define BATT_VOLTAGE_DIVIDER_R1         510000
+#define BATT_VOLTAGE_DIVIDER_R2         1000000
 
 static const batt_meas_param_t m_batt_meas_param = 
 {                                                                   
@@ -240,6 +241,7 @@ static void batt_event_handler_adc(void * p_event_data, uint16_t size)
     {
         m_evt_handler(&batt_meas_evt);    
     }
+    DEBUG_PRINTF(0, "Battery:%d%%,%d mv\n", battery_level_percent, batt_meas_evt.voltage_mv);
 }
 
 
@@ -597,6 +599,23 @@ uint32_t batt_meas_init(batt_meas_event_handler_t event_handler)
     uint32_t err_code;
 
     DEBUG_PRINTF(0, "Battery measurement init \r\n");
+
+    if ((m_batt_meas_param.voltage_divider.r_1_ohm == 0) &&
+        (m_batt_meas_param.voltage_divider.r_2_ohm == 0))
+    {
+        battery_divider_factor = 1;
+    }
+    else if ((m_batt_meas_param.voltage_divider.r_1_ohm == 0) ||
+             (m_batt_meas_param.voltage_divider.r_2_ohm == 0))
+    {
+        return BATT_STATUS_CODE_INVALID_PARAM;
+    }
+    else
+    {
+        battery_divider_factor = m_batt_meas_param.voltage_divider.r_2_ohm /
+                           (float)(m_batt_meas_param.voltage_divider.r_1_ohm +
+                                   m_batt_meas_param.voltage_divider.r_2_ohm);
+    }
 
     m_evt_handler = event_handler;
 
