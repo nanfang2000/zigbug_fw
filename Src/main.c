@@ -60,6 +60,7 @@
 #include "app_timer.h"
 #include "app_scheduler.h"
 #include "nrf_drv_gpiote.h"
+#include "nrf_drv_clock.h"
 
 #define LOCAL_DEBUG
 #include "debug.h"
@@ -95,11 +96,20 @@ void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
     while (1);
 }
 
+static void lfclk_config(void)
+{
+    ret_code_t err_code = nrf_drv_clock_init();
+    APP_ERROR_CHECK(err_code);
+
+    nrf_drv_clock_lfclk_request(NULL);
+}
+
 /**
  * @brief Function for application main entry.
  */
 int main(void)
 {
+    lfclk_config();
     APP_SCHED_INIT(SCHED_MAX_EVENT_DATA_SIZE, SCHED_QUEUE_SIZE);
     app_timer_init();
     /* Configure board. */
