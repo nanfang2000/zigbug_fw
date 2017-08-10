@@ -118,8 +118,10 @@ int main(void)
     //neopixel_init(&m_body_leds, 1, &neopixels_spi_instance);
     audio_init();
     mic_init();
+    motor_init();
     batt_meas_init(NULL);
     batt_meas_enable(5000);
+    motor_start(-90, 90);
  	
     /* Toggle LEDs. */
     while (true)

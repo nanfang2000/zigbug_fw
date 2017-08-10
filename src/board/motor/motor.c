@@ -9,46 +9,40 @@
 #include "app_error.h"
 #include "nrf_drv_pwm.h"
 
-#define TC214B_LEFT_IA  10 // Motor LEFT Input A --> MOTOR LEFT OA+
-#define TC214B_LEFT_IB  11 // Motor LEFT Input B --> MOTOR LEFT OB-
-#define TC214B_RIGHT_IA 10 // Motor RIGHT Input A --> MOTOR RIGHT OA+
-#define TC214B_RIGHT_IB 11 // Motor RIGHT Input B --> MOTOR RIGHT OB-
+#define TC214B_LEFT_IA  29 // Motor LEFT Input A --> MOTOR LEFT OA+
+#define TC214B_LEFT_IB  07 // Motor LEFT Input B --> MOTOR LEFT OB-
+#define TC214B_RIGHT_IA 25 // Motor RIGHT Input A --> MOTOR RIGHT OA+
+#define TC214B_RIGHT_IB 00 // Motor RIGHT Input B --> MOTOR RIGHT OB-
 
 #define CONFIG_MOTOR_LEFT_PWM			(TC214B_LEFT_IA)
 #define CONFIG_MOTOR_LEFT_DIR			(TC214B_LEFT_IB)
 #define CONFIG_MOTOR_RIGHT_PWM			(TC214B_RIGHT_IA)
 #define CONFIG_MOTOR_RIGHT_DIR			(TC214B_RIGHT_IB)
 
-const nrf_drv_pwm_t m_pwm_instance_left = NRF_DRV_PWM_INSTANCE(0);
-const nrf_drv_pwm_t m_pwm_instance_right = NRF_DRV_PWM_INSTANCE(1);
-
-const nrf_drv_pwm_config_t m_pwm_left_config = 
-{                                                                             \
-    .output_pins  = {CONFIG_MOTOR_LEFT_PWM,                                   \
-                     NRF_DRV_PWM_PIN_NOT_USED,                                \
-                     NRF_DRV_PWM_PIN_NOT_USED,                                \
-                     NRF_DRV_PWM_PIN_NOT_USED },                              \
-    .irq_priority = PWM_DEFAULT_CONFIG_IRQ_PRIORITY,                          \
-    .base_clock   = (nrf_pwm_clk_t)PWM_DEFAULT_CONFIG_BASE_CLOCK,             \
-    .count_mode   = (nrf_pwm_mode_t)PWM_DEFAULT_CONFIG_COUNT_MODE,            \
-    .top_value    = PWM_DEFAULT_CONFIG_TOP_VALUE,                             \
-    .load_mode    = (nrf_pwm_dec_load_t)PWM_DEFAULT_CONFIG_LOAD_MODE,         \
-    .step_mode    = (nrf_pwm_dec_step_t)PWM_DEFAULT_CONFIG_STEP_MODE,         \
+static const nrf_drv_pwm_t m_pwm_motor_instance = NRF_DRV_PWM_INSTANCE(0);
+nrf_pwm_values_individual_t m_pwm_seq_values[] = {0, 0, 0, 0};
+nrf_pwm_sequence_t const m_pwm_seq =
+{
+    .values.p_individual = m_pwm_seq_values,
+    .length          = NRF_PWM_VALUES_LENGTH(m_pwm_seq_values),
+    .repeats         = 0,
+    .end_delay       = 0
 };
 
-const nrf_drv_pwm_config_t m_pwm_right_config = 
-{                                                                             \
-    .output_pins  = {CONFIG_MOTOR_RIGHT_PWM,                                  \
-                     NRF_DRV_PWM_PIN_NOT_USED,                                \
-                     NRF_DRV_PWM_PIN_NOT_USED,                                \
-                     NRF_DRV_PWM_PIN_NOT_USED },                              \
-    .irq_priority = PWM_DEFAULT_CONFIG_IRQ_PRIORITY,                          \
-    .base_clock   = (nrf_pwm_clk_t)PWM_DEFAULT_CONFIG_BASE_CLOCK,             \
-    .count_mode   = (nrf_pwm_mode_t)PWM_DEFAULT_CONFIG_COUNT_MODE,            \
-    .top_value    = PWM_DEFAULT_CONFIG_TOP_VALUE,                             \
-    .load_mode    = (nrf_pwm_dec_load_t)PWM_DEFAULT_CONFIG_LOAD_MODE,         \
-    .step_mode    = (nrf_pwm_dec_step_t)PWM_DEFAULT_CONFIG_STEP_MODE,         \
+const nrf_drv_pwm_config_t m_pwm_motor_config = 
+{                                                                             
+    .output_pins  = {CONFIG_MOTOR_LEFT_PWM,                                   
+                     CONFIG_MOTOR_RIGHT_PWM,                                  
+                     NRF_DRV_PWM_PIN_NOT_USED,                                
+                     NRF_DRV_PWM_PIN_NOT_USED },                              
+    .irq_priority = PWM_DEFAULT_CONFIG_IRQ_PRIORITY,                          
+    .base_clock   = NRF_PWM_CLK_1MHz,             
+    .count_mode   = NRF_PWM_MODE_UP,            
+    .top_value    = 100,                             
+    .load_mode    = NRF_PWM_LOAD_INDIVIDUAL,         
+    .step_mode    = NRF_PWM_STEP_AUTO,         
 };
+
 
 void motor_init(void)
 {
@@ -63,35 +57,60 @@ void motor_init(void)
     APP_ERROR_CHECK(nrf_drv_gpiote_out_init(CONFIG_MOTOR_LEFT_DIR, &motor_left_dir_pin_config));
     APP_ERROR_CHECK(nrf_drv_gpiote_out_init(CONFIG_MOTOR_RIGHT_DIR, &motor_right_dir_pin_config));
 
-    APP_ERROR_CHECK(nrf_drv_pwm_init(&m_pwm_instance_left, &m_pwm_left_config, NULL));
-    APP_ERROR_CHECK(nrf_drv_pwm_init(&m_pwm_instance_right, &m_pwm_right_config, NULL));
+    APP_ERROR_CHECK(nrf_drv_pwm_init(&m_pwm_motor_instance, &m_pwm_motor_config, NULL));
 }
 
-void motor_start(int16_t left_speed, int16_t right_speed)
+static void motor_pwm_update_duty_cycle(uint8_t duty_cycle0, uint8_t duty_cycle1)
+{
+    
+    // Check if value is outside of range. If so, set to 100%
+    if(duty_cycle0 >= 100)
+    {
+        m_pwm_seq_values->channel_0 = 0;
+    }
+    else
+    {
+        m_pwm_seq_values->channel_0 = 100 - duty_cycle0;
+    }
+
+    if(duty_cycle1 >= 100)
+    {
+        m_pwm_seq_values->channel_1 = 0;
+    }
+    else
+    {
+        m_pwm_seq_values->channel_1 = 100 - duty_cycle1;
+    }
+    
+    nrf_drv_pwm_simple_playback(&m_pwm_motor_instance, &m_pwm_seq, 1, NRF_DRV_PWM_FLAG_LOOP);
+}
+
+void motor_start(int8_t left_speed, int8_t right_speed)
 {
     //Left
     if(left_speed < 0)
     {
         nrf_drv_gpiote_out_set(CONFIG_MOTOR_LEFT_DIR);
-        left_speed = MAX(-255, left_speed);
+        left_speed = -MAX(-100, left_speed);
     }
     else
     {
         nrf_drv_gpiote_out_clear(CONFIG_MOTOR_LEFT_DIR);
-        left_speed = MIN(255, left_speed);
+        left_speed = MIN(100, left_speed);
     }
 
     //Right
     if(right_speed < 0)
     {
         nrf_drv_gpiote_out_set(CONFIG_MOTOR_RIGHT_DIR);
-        right_speed = MAX(-255, right_speed);
+        right_speed = -MAX(-100, right_speed);
     }
     else
     {
         nrf_drv_gpiote_out_clear(CONFIG_MOTOR_LEFT_DIR);
-        right_speed = MIN(255, right_speed);
+        right_speed = MIN(100, right_speed);
     }
+    motor_pwm_update_duty_cycle(left_speed, right_speed);
 }
 
 void motor_stop(void)
