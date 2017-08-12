@@ -10,7 +10,7 @@
 #include "nrf_drv_pwm.h"
 
 #define TC214B_LEFT_IA  29 // Motor LEFT Input A --> MOTOR LEFT OA+
-#define TC214B_LEFT_IB  07 // Motor LEFT Input B --> MOTOR LEFT OB-
+#define TC214B_LEFT_IB  27 // Motor LEFT Input B --> MOTOR LEFT OB-
 #define TC214B_RIGHT_IA 25 // Motor RIGHT Input A --> MOTOR RIGHT OA+
 #define TC214B_RIGHT_IB 00 // Motor RIGHT Input B --> MOTOR RIGHT OB-
 
@@ -87,30 +87,32 @@ static void motor_pwm_update_duty_cycle(uint8_t duty_cycle0, uint8_t duty_cycle1
 
 void motor_start(int8_t left_speed, int8_t right_speed)
 {
+    uint8_t duty_left;
+    uint8_t duty_right;
     //Left
     if(left_speed < 0)
     {
         nrf_drv_gpiote_out_set(CONFIG_MOTOR_LEFT_DIR);
-        left_speed = -MAX(-100, left_speed);
+        duty_left = 100 + MAX(-100, left_speed);
     }
     else
     {
         nrf_drv_gpiote_out_clear(CONFIG_MOTOR_LEFT_DIR);
-        left_speed = MIN(100, left_speed);
+        duty_left = MIN(100, left_speed);
     }
 
     //Right
     if(right_speed < 0)
     {
         nrf_drv_gpiote_out_set(CONFIG_MOTOR_RIGHT_DIR);
-        right_speed = -MAX(-100, right_speed);
+        duty_right = 100 + MAX(-100, right_speed);
     }
     else
     {
-        nrf_drv_gpiote_out_clear(CONFIG_MOTOR_LEFT_DIR);
-        right_speed = MIN(100, right_speed);
+        nrf_drv_gpiote_out_clear(CONFIG_MOTOR_RIGHT_DIR);
+        duty_right = MIN(100, right_speed);
     }
-    motor_pwm_update_duty_cycle(left_speed, right_speed);
+    motor_pwm_update_duty_cycle(duty_left, duty_right);
 }
 
 void motor_stop(void)

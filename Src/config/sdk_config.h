@@ -283,7 +283,7 @@
 // <2=> Synth 
 
 #ifndef CLOCK_CONFIG_LF_SRC
-#define CLOCK_CONFIG_LF_SRC 1
+#define CLOCK_CONFIG_LF_SRC 0 //choose 0 RC as source because this version need use the XTAL pin for motor GPIO
 #endif
 
 // <o> CLOCK_CONFIG_IRQ_PRIORITY  - Interrupt priority

@@ -121,7 +121,7 @@ int main(void)
     motor_init();
     batt_meas_init(NULL);
     batt_meas_enable(5000);
-    motor_start(-90, 90);
+    motor_start(20, -40);
  	
     /* Toggle LEDs. */
     while (true)
