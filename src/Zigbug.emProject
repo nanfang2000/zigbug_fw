@@ -22,8 +22,8 @@
     </folder>
     <configuration
       Name="nrf52832_xxaa"
-      c_preprocessor_definitions="BOARD_PCA10040;BSP_DEFINES_ONLY;CONFIG_GPIO_AS_PINRESET;NRF52;NRF52832_XXAA;NRF52_PAN_12;NRF52_PAN_15;NRF52_PAN_20;NRF52_PAN_31;NRF52_PAN_36;NRF52_PAN_51;NRF52_PAN_54;NRF52_PAN_55;NRF52_PAN_58;NRF52_PAN_64;NRF52_PAN_74;SWI_DISABLE0;NRF_LOG_USES_RTT=1"
-      c_user_include_directories="$(PackagesDir)/CMSIS_4/CMSIS/Include;./config;./Device/nRF52;./Device/nRF52/Drivers/delay;./Device/nRF52/Core;./Device/nRF52/Drivers/common;./Library/util;./Device/nRF52/SoftDevice/headers;./Device/nRF52/Drivers/clock;./Device/nRF52/Drivers/nrf_soc_nosd;./Device/nRF52/Drivers/uart;./Device/nRF52/Drivers/hal;./Log;./Log/src;./Device/nRF52/Drivers/spi_master;./Device/nRF52/Drivers/gpiote;./Board/NeoPixels;./Device/nRF52/Drivers/i2s;./board/audio;./Debug/segger_rtt;./board/micphone;./device/nRF52/Drivers/pdm;./device/nRF52/Drivers/pwm;./device/nRF52/Drivers/saadc;./board/motor;./board/battery;./Library/timer;./Library/scheduler"
+      c_preprocessor_definitions="BOARD_PCA10040;BSP_DEFINES_ONLY;CONFIG_GPIO_AS_PINRESET;NRF52;NRF52832_XXAA;NRF52_PAN_12;NRF52_PAN_15;NRF52_PAN_20;NRF52_PAN_31;NRF52_PAN_36;NRF52_PAN_51;NRF52_PAN_54;NRF52_PAN_55;NRF52_PAN_58;NRF52_PAN_64;NRF52_PAN_74;SWI_DISABLE0;NRF_LOG_USES_RTT=1;USE_I2C_2V8"
+      c_user_include_directories="$(PackagesDir)/CMSIS_4/CMSIS/Include;./config;./Device/nRF52;./Device/nRF52/Drivers/delay;./Device/nRF52/Core;./Device/nRF52/Drivers/common;./Library/util;./Device/nRF52/SoftDevice/headers;./Device/nRF52/Drivers/clock;./Device/nRF52/Drivers/nrf_soc_nosd;./Device/nRF52/Drivers/uart;./Device/nRF52/Drivers/hal;./Log;./Log/src;./Device/nRF52/Drivers/spi_master;./Device/nRF52/Drivers/gpiote;./Board/NeoPixels;./Device/nRF52/Drivers/i2s;./board/audio;./Debug/segger_rtt;./board/micphone;./device/nRF52/Drivers/pdm;./device/nRF52/Drivers/pwm;./device/nRF52/Drivers/saadc;./board/motor;./board/battery;./Library/timer;./Library/scheduler;./board/drivers/vl53l0x;./device/nRF52/Drivers/twi_master;./board/vision"
       cpp_enable_rtti="Yes" />
     <configuration
       Name="External Keil"
@@ -50,6 +50,7 @@
       <file file_name="device/nRF52/Drivers/pwm/nrf_drv_pwm.c" />
       <file file_name="device/nRF52/Drivers/saadc/nrf_drv_saadc.c" />
       <file file_name="device/nRF52/Drivers/hal/nrf_saadc.c" />
+      <file file_name="Device/nRF52/Drivers/twi_master/nrf_drv_twi.c" />
     </folder>
     <folder Name="nRF_Libraries">
       <file file_name="./Library/util/app_util_platform.c" />
@@ -80,6 +81,18 @@
         <configuration Name="nrf52832_xxaa" build_exclude_from_build="No" />
       </file>
       <file file_name="board/battery/batt_meas.h" />
+      <folder Name="drivers">
+        <folder Name="vl53l0x">
+          <file file_name="Board/Drivers/vl53l0x/vl53l0x_api_calibration.c" />
+          <file file_name="Board/Drivers/vl53l0x/vl53l0x_api_core.c" />
+          <file file_name="Board/Drivers/vl53l0x/vl53l0x_api_ranging.c" />
+          <file file_name="Board/Drivers/vl53l0x/vl53l0x_api_strings.c" />
+          <file file_name="Board/Drivers/vl53l0x/vl53l0x_api.c" />
+          <file file_name="Board/Drivers/vl53l0x/vl53l0x_platform_log.c" />
+          <file file_name="Board/Drivers/vl53l0x/vl53l0x_platform.c" />
+        </folder>
+      </folder>
+      <file file_name="Board/vision/vision.c" />
     </folder>
   </project>
   <configuration Name="Internal" hidden="Yes" />

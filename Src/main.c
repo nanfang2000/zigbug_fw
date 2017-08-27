@@ -61,6 +61,7 @@
 #include "app_scheduler.h"
 #include "nrf_drv_gpiote.h"
 #include "nrf_drv_clock.h"
+#include "vision.h"
 
 #define LOCAL_DEBUG
 #include "debug.h"
@@ -121,11 +122,13 @@ int main(void)
     motor_init();
     batt_meas_init(NULL);
     batt_meas_enable(5000);
-    motor_start(20, -20);
- 	
+    //motor_start(20, -20);
+    vision_init();
+
     /* Toggle LEDs. */
     while (true)
     {
+        vision_start();
         /*neopixels_write_rgb(&m_body_leds, 0, &white);
         //bsp_board_led_invert(i);
         nrf_delay_ms(500);
