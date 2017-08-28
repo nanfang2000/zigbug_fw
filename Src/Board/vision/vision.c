@@ -9,6 +9,7 @@
 #include "nrf_log_ctrl.h"
 #include "app_error.h"
 #include "vl53l0x_api.h"
+#include "vl6180x_api.h"
 #define LOCAL_DEBUG
 #include "debug.h"
 
@@ -28,9 +29,10 @@ VL53L0X_Dev_t m_vl53l0x_dev =
     .comms_type = COM_I2C,
     .comms_speed_khz = 400
 };
+VL6180xDev_t myDev = 0x52;
 
-#define RANGER_SHDN_PIN (10)
-
+#define FRONT_RANGER_SHDN_PIN (17)
+#define BODY_RANGER_SHDN_PIN (10)
 
 static void i2c_event_handler(uint32_t const *p_data_received,
                               uint32_t *p_data_to_send,
@@ -46,8 +48,8 @@ int32_t _I2CWrite(VL53L0X_DEV Dev, uint8_t *pdata, uint32_t count)
     ret = nrf_drv_twi_tx(&m_i2c_instance, Dev->I2cDevAddr, pdata, count, false);
     if (ret != NRF_SUCCESS)
     {
-        NRF_LOG_ERROR("I2C error 0x%x %d len", Dev->I2cDevAddr, count);
-        DEBUG_PRINTF(0, "I2C error 0x%x %d len", Dev->I2cDevAddr, count);
+        NRF_LOG_ERROR("I2C error 0x%x %d len\n", Dev->I2cDevAddr, count);
+        DEBUG_PRINTF(0, "I2C error 0x%x %d len\n", Dev->I2cDevAddr, count);
         return ret;
     }
     return 0;
@@ -60,8 +62,36 @@ int32_t _I2CRead(VL53L0X_DEV Dev, uint8_t *pdata, uint32_t count)
     ret = nrf_drv_twi_rx(&m_i2c_instance, Dev->I2cDevAddr, pdata, count);
     if (ret != NRF_SUCCESS)
     {
-        NRF_LOG_ERROR("I2C error 0x%x %d len", Dev->I2cDevAddr, count);
-        DEBUG_PRINTF(0, "I2C error 0x%x %d len", Dev->I2cDevAddr, count);
+        NRF_LOG_ERROR("I2C error 0x%x %d len\n", Dev->I2cDevAddr, count);
+        DEBUG_PRINTF(0, "I2C error 0x%x %d len\n", Dev->I2cDevAddr, count);
+        return ret;
+    }
+    return 0;
+}
+
+int32_t VL6180x_I2CWrite(VL6180xDev_t Dev, uint8_t *pdata, uint8_t count) 
+{
+    ret_code_t ret;
+
+    ret = nrf_drv_twi_tx(&m_i2c_instance, Dev, pdata, count, false);
+    if (ret != NRF_SUCCESS)
+    {
+        NRF_LOG_ERROR("I2C error 0x%x %d len\n", Dev, count);
+        DEBUG_PRINTF(0, "I2C error 0x%x %d len\n", Dev, count);
+        return ret;
+    }
+    return 0;
+}
+
+int32_t VL6180x_I2CRead(VL6180xDev_t Dev, uint8_t *pdata, uint8_t count) 
+{
+    ret_code_t ret;
+
+    ret = nrf_drv_twi_rx(&m_i2c_instance, Dev, pdata, count);
+    if (ret != NRF_SUCCESS)
+    {
+        NRF_LOG_ERROR("I2C error 0x%x %d len\n", Dev, count);
+        DEBUG_PRINTF(0, "I2C error 0x%x %d len\n", Dev, count);
         return ret;
     }
     return 0;
@@ -75,9 +105,10 @@ void vision_init(void)
         APP_ERROR_CHECK(nrf_drv_gpiote_init());
     }
 
-    nrf_drv_gpiote_out_config_t shdn_pin_config = GPIOTE_CONFIG_OUT_SIMPLE(true);
+    nrf_drv_gpiote_out_config_t shdn_pin_config = GPIOTE_CONFIG_OUT_SIMPLE(false);
 
-    APP_ERROR_CHECK(nrf_drv_gpiote_out_init(RANGER_SHDN_PIN, &shdn_pin_config));
+    APP_ERROR_CHECK(nrf_drv_gpiote_out_init(FRONT_RANGER_SHDN_PIN, &shdn_pin_config));
+    APP_ERROR_CHECK(nrf_drv_gpiote_out_init(BODY_RANGER_SHDN_PIN, &shdn_pin_config));
 
     APP_ERROR_CHECK(nrf_drv_twi_init(&m_i2c_instance, &m_i2c_config, NULL, NULL));
 
@@ -108,17 +139,19 @@ void vision_init(void)
     //     DEBUG_PRINTF(0, "VL53L0X_SetDeviceMode error:%d \n", error);
     //     return;
     // }
+    VL6180x_InitData(myDev);
+    VL6180x_Prepare(myDev);
 }
 
 void vision_enable(void)
 {
-    nrf_drv_gpiote_out_set(RANGER_SHDN_PIN);
+    nrf_drv_gpiote_out_set(BODY_RANGER_SHDN_PIN);
     nrf_drv_twi_enable(&m_i2c_instance);
 }
 
 void vision_disable(void)
 {
-    nrf_drv_gpiote_out_clear(RANGER_SHDN_PIN);
+    nrf_drv_gpiote_out_clear(BODY_RANGER_SHDN_PIN);
     nrf_drv_twi_disable(&m_i2c_instance);
 }
 
