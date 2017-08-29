@@ -29,7 +29,10 @@ VL53L0X_Dev_t m_vl53l0x_dev =
     .comms_type = COM_I2C,
     .comms_speed_khz = 400
 };
-VL6180xDev_t myDev = 0x52 >> 1; //0x29 in 7 bits
+struct MyDev_t myDev = 
+{
+    .i2c_dev_addr = 0x52 >> 1,  //0x29 in 7 bits
+};
 
 #define FRONT_RANGER_SHDN_PIN       (17)
 #define BODY_RANGER_SHDN_PIN        (10)
@@ -50,7 +53,7 @@ int32_t _I2CWrite(VL53L0X_DEV Dev, uint8_t *pdata, uint32_t count)
 {
     ret_code_t ret;
 
-    ret = nrf_drv_twi_tx(&m_i2c_instance, Dev->I2cDevAddr, pdata, count, false);
+    ret = nrf_drv_twi_tx(&m_i2c_instance, Dev->I2cDevAddr, pdata, count, true);
     if (ret != NRF_SUCCESS)
     {
         NRF_LOG_ERROR("I2C error 0x%x %d len\n", Dev->I2cDevAddr, count);
@@ -78,11 +81,11 @@ int32_t VL6180x_I2CWrite(VL6180xDev_t Dev, uint8_t *pdata, uint8_t count)
 {
     ret_code_t ret;
 
-    ret = nrf_drv_twi_tx(&m_i2c_instance, Dev, pdata, count, false);
+    ret = nrf_drv_twi_tx(&m_i2c_instance, Dev->i2c_dev_addr, pdata, count, true);
     if (ret != NRF_SUCCESS)
     {
-        NRF_LOG_ERROR("I2C error 0x%x %d len\n", Dev, count);
-        DEBUG_PRINTF(0, "I2C error 0x%x %d len\n", Dev, count);
+        NRF_LOG_ERROR("I2C error 0x%x %d len\n", Dev->i2c_dev_addr, count);
+        DEBUG_PRINTF(0, "I2C error 0x%x %d len\n", Dev->i2c_dev_addr, count);
         return ret;
     }
     return 0;
@@ -92,11 +95,11 @@ int32_t VL6180x_I2CRead(VL6180xDev_t Dev, uint8_t *pdata, uint8_t count)
 {
     ret_code_t ret;
 
-    ret = nrf_drv_twi_rx(&m_i2c_instance, Dev, pdata, count);
+    ret = nrf_drv_twi_rx(&m_i2c_instance, Dev->i2c_dev_addr, pdata, count);
     if (ret != NRF_SUCCESS)
     {
-        NRF_LOG_ERROR("I2C error 0x%x %d len\n", Dev, count);
-        DEBUG_PRINTF(0, "I2C error 0x%x %d len\n", Dev, count);
+        NRF_LOG_ERROR("I2C error 0x%x %d len\n", Dev->i2c_dev_addr, count);
+        DEBUG_PRINTF(0, "I2C error 0x%x %d len\n", Dev->i2c_dev_addr, count);
         return ret;
     }
     return 0;
@@ -125,24 +128,24 @@ void vision_init(void)
     vision_enable();
     nrf_delay_ms(2);
 
-    VL53L0X_Error error;
-    VL53L0X_Version_t vl53l0x_version;
-    error = VL53L0X_GetVersion(&vl53l0x_version);
-    DEBUG_PRINTF(0, "VL53L0X PAL Version:%d.%d.%d Rev %d\n", vl53l0x_version.major, vl53l0x_version.minor, vl53l0x_version.revision, vl53l0x_version.revision);
-    /* Init VL53L0X */
-    error = VL53L0X_DataInit(&m_vl53l0x_dev);
-    if (error != VL53L0X_ERROR_NONE)
-    {
-        DEBUG_PRINTF(0, "VL53L0X_DataInit error:%d \n", error);
-        return;
-    }
+    // VL53L0X_Error error;
+    // VL53L0X_Version_t vl53l0x_version;
+    // error = VL53L0X_GetVersion(&vl53l0x_version);
+    // DEBUG_PRINTF(0, "VL53L0X PAL Version:%d.%d.%d Rev %d\n", vl53l0x_version.major, vl53l0x_version.minor, vl53l0x_version.revision, vl53l0x_version.revision);
+    // /* Init VL53L0X */
+    // error = VL53L0X_DataInit(&m_vl53l0x_dev);
+    // if (error != VL53L0X_ERROR_NONE)
+    // {
+    //     DEBUG_PRINTF(0, "VL53L0X_DataInit error:%d \n", error);
+    //     return;
+    // }
 
-    error = VL53L0X_StaticInit(&m_vl53l0x_dev);
-    if (error != VL53L0X_ERROR_NONE)
-    {
-        DEBUG_PRINTF(0, "VL53L0X_StaticInit error:%d \n", error);
-        return;
-    }
+    // error = VL53L0X_StaticInit(&m_vl53l0x_dev);
+    // if (error != VL53L0X_ERROR_NONE)
+    // {
+    //     DEBUG_PRINTF(0, "VL53L0X_StaticInit error:%d \n", error);
+    //     return;
+    // }
 
     // error = VL53L0X_SetDeviceMode(&m_vl53l0x_dev, VL53L0X_DEVICEMODE_SINGLE_RANGING);
     // if (error != VL53L0X_ERROR_NONE)
@@ -150,20 +153,37 @@ void vision_init(void)
     //     DEBUG_PRINTF(0, "VL53L0X_SetDeviceMode error:%d \n", error);
     //     return;
     // }
-    VL6180x_InitData(myDev);
-    // VL6180x_Prepare(myDev);
-    VL6180x_StaticInit(myDev);
+    // VL6180x_SetOffsetCalibrationData(myDev, 0);
+    VL6180x_SetI2CAddress(&myDev, 0x54);
+    myDev.i2c_dev_addr = 0x54>>1;
+    int32_t status = VL6180x_InitData(&myDev);
+    if (status)
+    {
+        DEBUG_PRINTF(0, "VL6180x_InitData error:%d \n", status);
+        // return;
+    }
+    status = VL6180x_Prepare(&myDev);
+    if (status)
+    {
+        DEBUG_PRINTF(0, "VL6180x_Prepare error:%d \n", status);
+        return;
+    }
+
+    // VL6180x_StaticInit(myDev);
 }
 
 void vision_enable(void)
 {
-    nrf_drv_gpiote_out_set(RIGHT_EYE_RANGER_SHDN_PIN);
+    nrf_drv_gpiote_out_clear(REAR_RANGER_SHDN_PIN);
+    nrf_delay_ms(5);
+    nrf_drv_gpiote_out_set(REAR_RANGER_SHDN_PIN);
+    nrf_delay_ms(5);
     nrf_drv_twi_enable(&m_i2c_instance);
 }
 
 void vision_disable(void)
 {
-    nrf_drv_gpiote_out_clear(RIGHT_EYE_RANGER_SHDN_PIN);
+    nrf_drv_gpiote_out_clear(REAR_RANGER_SHDN_PIN);
     nrf_drv_twi_disable(&m_i2c_instance);
 }
 
@@ -182,7 +202,7 @@ void vision_start()
     //     DEBUG_PRINTF(0, "VL53L0X_PerformSingleMeasurement Range:%d \n", range_data.RangeMilliMeter);
     // }
     VL6180x_RangeData_t range_data;
-    VL6180x_RangePollMeasurement(myDev, &range_data);
+    VL6180x_RangePollMeasurement(&myDev, &range_data);
     if(range_data.errorStatus != 0)
     {
         DEBUG_PRINTF(0, "VL6180x_RangePollMeasurement error:%d-%s \n",range_data.errorStatus, VL6180x_RangeGetStatusErrString(range_data.errorStatus));

@@ -96,7 +96,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * Value __0__ =>  Multiple device capable. User must review "device" structure and type in vl6180x_platform.h files.
  * @ingroup api_platform
  */
-#define VL6180x_SINGLE_DEVICE_DRIVER 1
+#define VL6180x_SINGLE_DEVICE_DRIVER 0
 
 /**
  * @def VL6180X_SAFE_POLLING_ENTER
@@ -145,7 +145,7 @@ struct MyDev_t {
     /*!< user specific field */
     int     i2c_bus_num;                   /*!< i2c bus number user specific field */
     int     i2c_dev_addr;                  /*!< i2c devcie address user specific field */
-    mutex_t dev_lock   ;                   /*!< mutex user specific field */
+    //mutex_t dev_lock   ;                   /*!< mutex user specific field */
     int     i2c_file;                      /*!< sample i2c file handle */
 };
 typedef struct MyDev_t *VL6180xDev_t;
