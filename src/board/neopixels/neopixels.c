@@ -64,6 +64,7 @@ static void neopixel_select_group(const led_group_t * led_group)
 		{
 			nrf_drv_spi_uninit(m_spi_instance);
 		}
+		m_last_select_group = led_group;
 		APP_ERROR_CHECK(nrf_drv_spi_init(m_spi_instance, &m_spi_config, spi_event_handler, NULL));
 	}
 }
