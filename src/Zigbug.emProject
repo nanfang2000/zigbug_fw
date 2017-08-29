@@ -67,6 +67,7 @@
     <folder Name="nRF_Segger_RTT">
       <file file_name="./Debug/segger_rtt/SEGGER_RTT.c" />
       <file file_name="./Debug/segger_rtt/SEGGER_RTT_printf.c" />
+      <file file_name="debug/segger_rtt/RTT_Syscalls_GCC.c" />
     </folder>
     <folder Name="Board">
       <file file_name="./Board/neopixels/neopixels.c" />

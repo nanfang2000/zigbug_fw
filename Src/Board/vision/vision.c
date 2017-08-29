@@ -29,10 +29,15 @@ VL53L0X_Dev_t m_vl53l0x_dev =
     .comms_type = COM_I2C,
     .comms_speed_khz = 400
 };
-VL6180xDev_t myDev = 0x52;
+VL6180xDev_t myDev = 0x52 >> 1; //0x29 in 7 bits
 
-#define FRONT_RANGER_SHDN_PIN (17)
-#define BODY_RANGER_SHDN_PIN (10)
+#define FRONT_RANGER_SHDN_PIN       (17)
+#define BODY_RANGER_SHDN_PIN        (10)
+#define LEFT_EYE_RANGER_SHDN_PIN    (1)
+#define RIGHT_EYE_RANGER_SHDN_PIN   (31)
+#define REAR_RANGER_SHDN_PIN        (18)
+#define LEFT_SIDE_RANGER_SHDN_PIN   (9)
+#define RIGHT_SIDE_RANGER_SHDN_PIN  (5)
 
 static void i2c_event_handler(uint32_t const *p_data_received,
                               uint32_t *p_data_to_send,
@@ -109,10 +114,16 @@ void vision_init(void)
 
     APP_ERROR_CHECK(nrf_drv_gpiote_out_init(FRONT_RANGER_SHDN_PIN, &shdn_pin_config));
     APP_ERROR_CHECK(nrf_drv_gpiote_out_init(BODY_RANGER_SHDN_PIN, &shdn_pin_config));
+    APP_ERROR_CHECK(nrf_drv_gpiote_out_init(LEFT_EYE_RANGER_SHDN_PIN, &shdn_pin_config));
+    APP_ERROR_CHECK(nrf_drv_gpiote_out_init(RIGHT_EYE_RANGER_SHDN_PIN, &shdn_pin_config));
+    APP_ERROR_CHECK(nrf_drv_gpiote_out_init(REAR_RANGER_SHDN_PIN, &shdn_pin_config));
+    APP_ERROR_CHECK(nrf_drv_gpiote_out_init(LEFT_SIDE_RANGER_SHDN_PIN, &shdn_pin_config));
+    APP_ERROR_CHECK(nrf_drv_gpiote_out_init(RIGHT_SIDE_RANGER_SHDN_PIN, &shdn_pin_config));
 
     APP_ERROR_CHECK(nrf_drv_twi_init(&m_i2c_instance, &m_i2c_config, NULL, NULL));
 
     vision_enable();
+    nrf_delay_ms(2);
 
     VL53L0X_Error error;
     VL53L0X_Version_t vl53l0x_version;
@@ -140,38 +151,56 @@ void vision_init(void)
     //     return;
     // }
     VL6180x_InitData(myDev);
-    VL6180x_Prepare(myDev);
+    // VL6180x_Prepare(myDev);
+    VL6180x_StaticInit(myDev);
 }
 
 void vision_enable(void)
 {
-    nrf_drv_gpiote_out_set(BODY_RANGER_SHDN_PIN);
+    nrf_drv_gpiote_out_set(RIGHT_EYE_RANGER_SHDN_PIN);
     nrf_drv_twi_enable(&m_i2c_instance);
 }
 
 void vision_disable(void)
 {
-    nrf_drv_gpiote_out_clear(BODY_RANGER_SHDN_PIN);
+    nrf_drv_gpiote_out_clear(RIGHT_EYE_RANGER_SHDN_PIN);
     nrf_drv_twi_disable(&m_i2c_instance);
 }
 
 void vision_start()
 {
-    VL53L0X_Error error;
-    VL53L0X_RangingMeasurementData_t range_data;
-    VL53L0X_PowerModes power_mode;
-    VL53L0X_GetPowerMode(&m_vl53l0x_dev, &power_mode);
-    DEBUG_PRINTF(0, "VL53L0X_GetPowerMode Mode:%d \n", power_mode);
-    error = VL53L0X_PerformSingleRangingMeasurement(&m_vl53l0x_dev, &range_data);
-    if (error != VL53L0X_ERROR_NONE)
+    // VL53L0X_Error error;
+    // VL53L0X_RangingMeasurementData_t range_data;
+    // error = VL53L0X_PerformSingleRangingMeasurement(&m_vl53l0x_dev, &range_data);
+    // if (error != VL53L0X_ERROR_NONE)
+    // {
+    //     DEBUG_PRINTF(0, "VL53L0X_PerformSingleMeasurement error:%d \n", error);
+    //     return;
+    // }
+    // else
+    // {
+    //     DEBUG_PRINTF(0, "VL53L0X_PerformSingleMeasurement Range:%d \n", range_data.RangeMilliMeter);
+    // }
+    VL6180x_RangeData_t range_data;
+    VL6180x_RangePollMeasurement(myDev, &range_data);
+    if(range_data.errorStatus != 0)
     {
-        DEBUG_PRINTF(0, "VL53L0X_PerformSingleMeasurement error:%d \n", error);
-        return;
+        DEBUG_PRINTF(0, "VL6180x_RangePollMeasurement error:%d-%s \n",range_data.errorStatus, VL6180x_RangeGetStatusErrString(range_data.errorStatus));
     }
     else
     {
-        DEBUG_PRINTF(0, "VL53L0X_PerformSingleMeasurement Range:%d \n", range_data.RangeMilliMeter);
+        DEBUG_PRINTF(0, "VL6180x_RangePollMeasurement Range:%d \n", range_data.range_mm);
     }
+//    VL6180x_AlsData_t als_data;
+//    VL6180x_AlsPollMeasurement(myDev, &als_data);
+//    if(als_data.errorStatus != 0)
+//    {
+//        DEBUG_PRINTF(0, "VL6180x_AlsPollMeasurement error:%d \n", als_data.errorStatus);
+//    }
+//    else
+//    {
+//        DEBUG_PRINTF(0, "VL6180x_AlsPollMeasurement Lux:%d \n", als_data.lux);
+//    }
 }
 
 void vision_stop(void)
