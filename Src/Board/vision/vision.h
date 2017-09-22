@@ -11,6 +11,7 @@ void vision_init(void);
 void vision_play(const uint8_t * p_audio_data, uint16_t audio_length);
 
 void vision_stop(void);
+int16_t vision_get_rear_dist();
 	
 #ifdef  __cplusplus
 }  

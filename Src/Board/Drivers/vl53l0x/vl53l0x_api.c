@@ -1,5 +1,5 @@
 /*******************************************************************************
- Copyright © 2016, STMicroelectronics International N.V.
+ Copyright ï¿½ 2016, STMicroelectronics International N.V.
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -2699,9 +2699,9 @@ VL53L0X_Error VL53L0X_SetGpioConfig(VL53L0X_DEV Dev, uint8_t Pin,
 			VL53L0X_REG_GPIO_HV_MUX_ACTIVE_HIGH, 0xEF, data);
 		}
 
-		if (Status == VL53L0X_ERROR_NONE)
-			VL53L0X_SETDEVICESPECIFICPARAMETER(Dev,
-				Pin0GpioFunctionality, Functionality);
+		// if (Status == VL53L0X_ERROR_NONE)
+		// 	VL53L0X_SETDEVICESPECIFICPARAMETER(Dev,
+		// 		Pin0GpioFunctionality, Functionality);
 
 		if (Status == VL53L0X_ERROR_NONE)
 			Status = VL53L0X_ClearInterruptMask(Dev, 0);
