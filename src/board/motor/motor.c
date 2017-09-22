@@ -93,10 +93,11 @@ void motor_start(int8_t left_speed, int8_t right_speed)
     nrf_drv_gpiote_out_uninit(TC214B_LEFT_IA);
     nrf_drv_gpiote_out_uninit(TC214B_LEFT_IB);
     nrf_drv_gpiote_out_uninit(TC214B_RIGHT_IA);
-    nrf_drv_gpiote_out_uninit(TC214B_RIGHT_IA);
+    nrf_drv_gpiote_out_uninit(TC214B_RIGHT_IB);
     //Left
     if(left_speed < 0)
     {
+        nrf_drv_gpiote_out_uninit(TC214B_LEFT_IA);
         nrf_drv_gpiote_out_config_t motor_left_dir_pin_config = GPIOTE_CONFIG_OUT_SIMPLE(false);
         APP_ERROR_CHECK(nrf_drv_gpiote_out_init(TC214B_LEFT_IA, &motor_left_dir_pin_config));
         m_pwm_motor_config.output_pins[0] = TC214B_LEFT_IB;
@@ -104,6 +105,7 @@ void motor_start(int8_t left_speed, int8_t right_speed)
     }
     else
     {
+        nrf_drv_gpiote_out_uninit(TC214B_LEFT_IB);
         nrf_drv_gpiote_out_config_t motor_left_dir_pin_config = GPIOTE_CONFIG_OUT_SIMPLE(false);
         APP_ERROR_CHECK(nrf_drv_gpiote_out_init(TC214B_LEFT_IB, &motor_left_dir_pin_config));
         m_pwm_motor_config.output_pins[0] = TC214B_LEFT_IA;
@@ -113,6 +115,7 @@ void motor_start(int8_t left_speed, int8_t right_speed)
     //Right
     if(right_speed < 0)
     {
+        nrf_drv_gpiote_out_uninit(TC214B_RIGHT_IA);
         nrf_drv_gpiote_out_config_t motor_right_dir_pin_config = GPIOTE_CONFIG_OUT_SIMPLE(false);
         APP_ERROR_CHECK(nrf_drv_gpiote_out_init(TC214B_RIGHT_IA, &motor_right_dir_pin_config));
         m_pwm_motor_config.output_pins[1] = TC214B_RIGHT_IB;
@@ -120,6 +123,7 @@ void motor_start(int8_t left_speed, int8_t right_speed)
     }
     else
     {
+        nrf_drv_gpiote_out_uninit(TC214B_RIGHT_IB);
         nrf_drv_gpiote_out_config_t motor_right_dir_pin_config = GPIOTE_CONFIG_OUT_SIMPLE(false);
         APP_ERROR_CHECK(nrf_drv_gpiote_out_init(TC214B_RIGHT_IB, &motor_right_dir_pin_config));
         m_pwm_motor_config.output_pins[1] = TC214B_RIGHT_IA;
