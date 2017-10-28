@@ -157,8 +157,8 @@ int main(void)
     mic_init();
     vision_init();
     motor_init();
-    //batt_meas_init(NULL);
-    //batt_meas_enable(5000);
+    batt_meas_init(NULL);
+    batt_meas_enable(5000);
     //motor_start(-SPEED, -SPEED);
     neopixel_init(&m_body_leds, 1, &neopixels_spi_instance);
     enable_breath_led(1000);
