@@ -660,14 +660,14 @@
 
 
 #ifndef I2S_CONFIG_SCK_PIN
-#define I2S_CONFIG_SCK_PIN 11
+#define I2S_CONFIG_SCK_PIN 12
 #endif
 
 // <o> I2S_CONFIG_LRCK_PIN - LRCK pin  <1-31> 
 
 
 #ifndef I2S_CONFIG_LRCK_PIN
-#define I2S_CONFIG_LRCK_PIN 12
+#define I2S_CONFIG_LRCK_PIN 11
 #endif
 
 // <o> I2S_CONFIG_MCK_PIN - MCK pin 
@@ -2213,7 +2213,7 @@
 // <e> SPI_CONFIG_LOG_ENABLED - Enables logging in the module.
 //==========================================================
 #ifndef SPI_CONFIG_LOG_ENABLED
-#define SPI_CONFIG_LOG_ENABLED 0
+#define SPI_CONFIG_LOG_ENABLED 1
 #endif
 #if  SPI_CONFIG_LOG_ENABLED
 // <o> SPI_CONFIG_LOG_LEVEL  - Default Severity level
