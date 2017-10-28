@@ -63,6 +63,10 @@
 #include "nrf_drv_clock.h"
 #include "vision.h"
 
+#include "FreeRTOS.h"
+#include "task.h"
+#include "timers.h"
+
 #define LOCAL_DEBUG
 #include "debug.h"
 
@@ -113,6 +117,31 @@ static void lfclk_config(void)
 
     nrf_drv_clock_lfclk_request(NULL);
 }
+#define TASK_DELAY        200           /**< Task delay. Delays a LED0 task for 200 ms */
+#define TIMER_PERIOD      1000          /**< Timer period. LED1 timer will expire after 1000 ms */
+
+TaskHandle_t  led_toggle_task_handle;   /**< Reference to LED0 toggling FreeRTOS task. */
+TimerHandle_t led_toggle_timer_handle;  /**< Reference to LED1 toggling FreeRTOS timer. */
+
+/**@brief LED0 task entry function.
+ *
+ * @param[in] pvParameter   Pointer that will be used as the parameter for the task.
+ */
+static void led_toggle_task_function (void * pvParameter)
+{
+    UNUSED_PARAMETER(pvParameter);
+    while (true)
+    {
+        neopixels_write_rgb(&m_body_leds, 0, &red);
+
+        /* Delay a task for a given number of ticks */
+        vTaskDelay(50);
+        neopixels_write_rgb(&m_body_leds, 0, &black);
+        vTaskDelay(1500);
+
+        /* Tasks must be implemented to never return... */
+    }
+}
 
 APP_TIMER_DEF(breath_led_app_timer_id);
 bool led_breath_toggle = false;
@@ -149,7 +178,7 @@ int main(void)
  {
     lfclk_config();
     APP_SCHED_INIT(SCHED_MAX_EVENT_DATA_SIZE, SCHED_QUEUE_SIZE);
-    app_timer_init();
+    //app_timer_init();
     /* Configure board. */
     //bsp_board_leds_init();
     nrf_drv_gpiote_init();
@@ -157,12 +186,21 @@ int main(void)
     mic_init();
     vision_init();
     motor_init();
-    batt_meas_init(NULL);
-    batt_meas_enable(5000);
+    //batt_meas_init(NULL);
+    //batt_meas_enable(5000);
     //motor_start(-SPEED, -SPEED);
     neopixel_init(&m_body_leds, 1, &neopixels_spi_instance);
-    enable_breath_led(1000);
+    //enable_breath_led(1000);
     /* Toggle LEDs. */
+    /* Create task for LED0 blinking with priority set to 2 */
+    UNUSED_VARIABLE(xTaskCreate(led_toggle_task_function, "LED0", configMINIMAL_STACK_SIZE + 200, NULL, 2, &led_toggle_task_handle));
+
+    /* Activate deep sleep mode */
+    SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
+
+    /* Start FreeRTOS scheduler. */
+    vTaskStartScheduler();
+
     while (true)
     {
         int16_t dist = vision_get_rear_dist();
