@@ -77,14 +77,17 @@ const led_group_t m_body_leds =
 	.led_num = 4,
 	.rgb_buf = (rgb_t*)&m_led_rgb_body,
 };
-rgb_t red = {255, 20, 20};
-rgb_t green = {20, 255, 20};
-rgb_t blue = {20, 255, 20};
+rgb_t red = {255, 0, 0};
+rgb_t green = {0, 255, 0};
+rgb_t blue = {0, 0, 255};
 rgb_t white = {255, 255, 255};
+rgb_t black = {0, 0, 0};
 
-static const nrf_drv_spi_t neopixels_spi_instance = NRF_DRV_SPI_INSTANCE(SPI0_INSTANCE_INDEX);
+static const nrf_drv_spi_t neopixels_spi_instance = NRF_DRV_SPI_INSTANCE(0);
 #include "wav_1.h"
 static uint16_t listen_buffer[26000];
+
+#define SPEED 20
 
 uint32_t error_code;
 void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
@@ -94,7 +97,13 @@ void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
     #endif
     error_code = ((error_info_t *)(info))->err_code;
     UNUSED_VARIABLE(error_code);
-    while (1);
+    while (1)
+    {
+       neopixels_write_rgb(&m_body_leds, 0, &red);
+       nrf_delay_ms(200);
+       neopixels_write_rgb(&m_body_leds, 0, &green);
+       nrf_delay_ms(200);
+    };
 }
 
 static void lfclk_config(void)
@@ -105,40 +114,79 @@ static void lfclk_config(void)
     nrf_drv_clock_lfclk_request(NULL);
 }
 
+APP_TIMER_DEF(breath_led_app_timer_id);
+bool led_breath_toggle = false;
+static void app_timer_breath_led_handler(void * unused)
+{
+    if(led_breath_toggle)
+    {
+        neopixels_write_rgb(&m_body_leds, 0, &red);
+        //motor_start(-SPEED, -SPEED);
+    }
+    else
+    {
+        neopixels_write_rgb(&m_body_leds, 0, &black);
+        //motor_start(SPEED, SPEED);
+    }
+    led_breath_toggle = !led_breath_toggle;
+}
+void enable_breath_led(uint32_t meas_interval_ms)
+{
+    uint32_t err_code = app_timer_create(&breath_led_app_timer_id,
+        APP_TIMER_MODE_REPEATED,
+        app_timer_breath_led_handler);
+    RETURN_IF_ERROR(err_code);
+
+    err_code = app_timer_start(breath_led_app_timer_id,
+                                APP_TIMER_TICKS(meas_interval_ms), NULL);
+    RETURN_IF_ERROR(err_code);
+}
+
 /**
  * @brief Function for application main entry.
  */
 int main(void)
-{
+ {
     lfclk_config();
     APP_SCHED_INIT(SCHED_MAX_EVENT_DATA_SIZE, SCHED_QUEUE_SIZE);
     app_timer_init();
     /* Configure board. */
     //bsp_board_leds_init();
     nrf_drv_gpiote_init();
-    //neopixel_init(&m_body_leds, 1, &neopixels_spi_instance);
     audio_init();
     mic_init();
-    motor_init();
-    batt_meas_init(NULL);
-    batt_meas_enable(5000);
-    //motor_start(20, -20);
     vision_init();
-
+    motor_init();
+    //batt_meas_init(NULL);
+    //batt_meas_enable(5000);
+    //motor_start(-SPEED, -SPEED);
+    neopixel_init(&m_body_leds, 1, &neopixels_spi_instance);
+    enable_breath_led(1000);
     /* Toggle LEDs. */
     while (true)
     {
-        vision_start();
-        /*neopixels_write_rgb(&m_body_leds, 0, &white);
-        //bsp_board_led_invert(i);
-        nrf_delay_ms(500);
-        neopixels_write_rgb(&m_body_leds, 0, &white);
-        nrf_delay_ms(500);
-        neopixels_write_rgb(&m_body_leds, 0, &white);*/
-        //nrf_delay_ms(1000);
+        int16_t dist = vision_get_rear_dist();
+        if(dist <= 150)
+        {
+            motor_start(SPEED,-SPEED);
+        }
+        else
+        {
+            motor_start(-SPEED, -SPEED);
+        }
+        //vision_start();
+        //neopixels_write_rgb(&m_body_leds, 0, &red);
+        //nrf_delay_ms(200);
+        //neopixels_write_rgb(&m_body_leds, 0, &green);
+        //nrf_delay_ms(200);
+        // nrf_delay_ms(200);
+        // neopixels_write_rgb(&m_body_leds, 2, &blue);
+        // nrf_delay_ms(200);
+        // neopixels_write_rgb(&m_body_leds, 3, &white);
+        // nrf_delay_ms(200);
         //audio_play(DATA, SOUND_LENGTH);
         //DEBUG_PRINTF(0, "Battery:%d%%\n", batt_meas_get_level());
-       // mic_listen(0, listen_buffer, 2000);
+       //mic_listen(0, listen_buffer, 2000);
        app_sched_execute();
     }
 }
