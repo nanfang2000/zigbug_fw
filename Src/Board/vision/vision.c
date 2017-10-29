@@ -12,6 +12,8 @@
 #include "vl6180x_api.h"
 #define LOCAL_DEBUG
 #include "debug.h"
+#include "FreeRTOS.h"
+#include "task.h"
 
 static nrf_drv_twi_t m_i2c_instance = NRF_DRV_TWI_INSTANCE(1);
 static nrf_drv_twi_config_t m_i2c_config =
@@ -105,6 +107,10 @@ int32_t VL6180x_I2CRead(VL6180xDev_t Dev, uint8_t *pdata, uint8_t count)
     return 0;
 }
 
+void VL6180x_PollDelay(VL6180xDev_t dev)
+{
+    vTaskDelay(10);
+}
 void vision_init(void)
 {
     uint32_t  refSpadCount;

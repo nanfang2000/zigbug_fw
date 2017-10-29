@@ -192,7 +192,7 @@ void VL6180x_PollDelay(VL6180xDev_t dev); /* usualy best implemanted a a real fu
  *  @brief Default value : does nothing. Macro to be deleted it you implement a real function
  * @ingroup api_platform
  */
-#define VL6180x_PollDelay(dev)  (void)0
+//#define VL6180x_PollDelay(dev)  (void)0
 
 
 

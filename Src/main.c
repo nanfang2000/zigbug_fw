@@ -121,6 +121,7 @@ static void lfclk_config(void)
 #define TIMER_PERIOD      1000          /**< Timer period. LED1 timer will expire after 1000 ms */
 
 TaskHandle_t  led_toggle_task_handle;   /**< Reference to LED0 toggling FreeRTOS task. */
+TaskHandle_t  vision_task_handle;   /**< Reference to LED0 toggling FreeRTOS task. */
 TimerHandle_t led_toggle_timer_handle;  /**< Reference to LED1 toggling FreeRTOS timer. */
 
 /**@brief LED0 task entry function.
@@ -171,6 +172,27 @@ void enable_breath_led(uint32_t meas_interval_ms)
     RETURN_IF_ERROR(err_code);
 }
 
+/**@brief LED0 task entry function.
+ *
+ * @param[in] pvParameter   Pointer that will be used as the parameter for the task.
+ */
+ static void vision_task_function (void * pvParameter)
+ {
+     UNUSED_PARAMETER(pvParameter);
+     while (true)
+     { 
+         int16_t dist = vision_get_rear_dist();
+         if(dist <= 150)
+         {
+             motor_start(SPEED,-SPEED);
+         }
+         else
+         {
+             motor_start(-SPEED, -SPEED);
+         }
+     }
+ }
+
 /**
  * @brief Function for application main entry.
  */
@@ -195,6 +217,8 @@ int main(void)
     /* Create task for LED0 blinking with priority set to 2 */
     UNUSED_VARIABLE(xTaskCreate(led_toggle_task_function, "LED0", configMINIMAL_STACK_SIZE + 200, NULL, 2, &led_toggle_task_handle));
 
+    UNUSED_VARIABLE(xTaskCreate(vision_task_function, "VISION", configMINIMAL_STACK_SIZE + 200, NULL, 3, &vision_task_handle));
+    
     /* Activate deep sleep mode */
     SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
 
@@ -203,15 +227,15 @@ int main(void)
 
     while (true)
     {
-        int16_t dist = vision_get_rear_dist();
-        if(dist <= 150)
-        {
-            motor_start(SPEED,-SPEED);
-        }
-        else
-        {
-            motor_start(-SPEED, -SPEED);
-        }
+        // int16_t dist = vision_get_rear_dist();
+        // if(dist <= 150)
+        // {
+        //     motor_start(SPEED,-SPEED);
+        // }
+        // else
+        // {
+        //     motor_start(-SPEED, -SPEED);
+        // }
         //vision_start();
         //neopixels_write_rgb(&m_body_leds, 0, &red);
         //nrf_delay_ms(200);
