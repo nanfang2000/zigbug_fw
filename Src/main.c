@@ -181,14 +181,14 @@ void enable_breath_led(uint32_t meas_interval_ms)
      UNUSED_PARAMETER(pvParameter);
      while (true)
      { 
-         int16_t dist = vision_get_rear_dist();
+         int16_t dist = vision_get_front_dist();
          if(dist <= 150)
          {
-             motor_start(SPEED,-SPEED);
+             motor_start(-SPEED,SPEED);
          }
          else
          {
-             motor_start(-SPEED, -SPEED);
+             motor_start(SPEED, SPEED);
          }
      }
  }
@@ -227,25 +227,6 @@ int main(void)
 
     while (true)
     {
-        // int16_t dist = vision_get_rear_dist();
-        // if(dist <= 150)
-        // {
-        //     motor_start(SPEED,-SPEED);
-        // }
-        // else
-        // {
-        //     motor_start(-SPEED, -SPEED);
-        // }
-        //vision_start();
-        //neopixels_write_rgb(&m_body_leds, 0, &red);
-        //nrf_delay_ms(200);
-        //neopixels_write_rgb(&m_body_leds, 0, &green);
-        //nrf_delay_ms(200);
-        // nrf_delay_ms(200);
-        // neopixels_write_rgb(&m_body_leds, 2, &blue);
-        // nrf_delay_ms(200);
-        // neopixels_write_rgb(&m_body_leds, 3, &white);
-        // nrf_delay_ms(200);
         //audio_play(DATA, SOUND_LENGTH);
         //DEBUG_PRINTF(0, "Battery:%d%%\n", batt_meas_get_level());
        //mic_listen(0, listen_buffer, 2000);

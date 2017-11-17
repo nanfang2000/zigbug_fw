@@ -227,7 +227,7 @@ done:
     return Status;
 }
 
-VL53L0X_Error VL53L0X_PollingDelay(VL53L0X_DEV Dev) {
+__WEAK VL53L0X_Error VL53L0X_PollingDelay(VL53L0X_DEV Dev) {
     VL53L0X_Error status = VL53L0X_ERROR_NONE;
 
     // do nothing
