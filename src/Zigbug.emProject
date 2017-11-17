@@ -119,6 +119,12 @@
         <file file_name="rtos/freertos/config/FreeRTOSConfig.h" />
       </folder>
     </folder>
+    <folder Name="ZigBug">
+      <file file_name="ZigBug/Battery.cpp" />
+      <file file_name="ZigBug/Battery.h" />
+      <file file_name="ZigBug/Organ.cpp" />
+      <file file_name="ZigBug/Organ.h" />
+    </folder>
   </project>
   <configuration Name="Internal" hidden="Yes" />
   <configuration Name="nrf52832_xxaa" inherited_configurations="Internal" />
