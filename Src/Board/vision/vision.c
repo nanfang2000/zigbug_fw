@@ -69,6 +69,9 @@ struct MyDev_t m_vl6180_dev_right =
 #define LEFT_SIDE_RANGER_SHDN_PIN   (9)
 #define RIGHT_SIDE_RANGER_SHDN_PIN  (5)
 
+int16_t vision_get_front_dist(void);
+int16_t vision_get_vl6180x_dist(VL6180xDev_t dev);
+
 static void i2c_event_handler(uint32_t const *p_data_received,
                               uint32_t *p_data_to_send,
                               uint16_t number_of_words)
@@ -134,13 +137,14 @@ int32_t VL6180x_I2CRead(VL6180xDev_t Dev, uint8_t *pdata, uint8_t count)
 
 void VL6180x_PollDelay(VL6180xDev_t dev)
 {
-    vTaskDelay(10);
+    vTaskDelay(5);
 }
 
 VL53L0X_Error VL53L0X_PollingDelay(VL53L0X_DEV Dev) {
     VL53L0X_Error status = VL53L0X_ERROR_NONE;
 
-    nrf_delay_ms(2);//vTaskDelay(10);
+    //nrf_delay_ms(2);
+    vTaskDelay(5);
     return status;
 }
 void vision_vl_enable(uint32_t pin)
@@ -198,7 +202,7 @@ void vision_init_vl53l0x(VL53L0X_Dev_t* dev, uint8_t shdn_pin, uint8_t i2c_addr)
 
     VL53L0X_SetDeviceAddress(dev, i2c_addr);
     dev->I2cDevAddr = i2c_addr>>1;
-
+    DEBUG_PRINTF(0, "VL53L0X Init \n");
 }
 
 void vision_init_vl6180x(VL6180xDev_t dev, uint8_t shdn_pin, uint8_t i2c_addr)
@@ -221,6 +225,7 @@ void vision_init_vl6180x(VL6180xDev_t dev, uint8_t shdn_pin, uint8_t i2c_addr)
     }
 
     // VL6180x_StaticInit(&m_vl6180_dev_rear);
+    DEBUG_PRINTF(0, "VL6180x Init \n");
 }
 void vision_init(void)
 {
@@ -315,14 +320,98 @@ void vision_start()
 //    }
 }
 
+void vision_start_measure(Vision_Orientation orientation)
+{
+    VL53L0X_Error Status;
+    switch (orientation)
+    {
+    case VISION_FRONT:
+        Status = VL53L0X_ERROR_NONE;   
+        /* This function will do a complete single ranging
+         * Here we fix the mode! */
+        Status = VL53L0X_SetDeviceMode(&m_vl53l0x_dev_front, VL53L0X_DEVICEMODE_SINGLE_RANGING);
+    
+        if (Status == VL53L0X_ERROR_NONE)
+            Status = VL53L0X_StartMeasurement(&m_vl53l0x_dev_front);
+
+        break;
+    case VISION_LEFT_EYE:
+        VL6180x_RangeStartSingleShot(&m_vl6180_dev_eye_left);
+        VL6180x_RangeGetMeasurementIfReady(&m_vl6180_dev_eye_left,0);
+        break;
+    case VISION_RIGHT_EYE:
+        VL6180x_RangeStartSingleShot(&m_vl6180_dev_eye_right);
+        break;
+    case VISION_LEFT_SIDE:
+        VL6180x_RangeStartSingleShot(&m_vl6180_dev_left);
+        break;
+    case VISION_RIGHT_SIDE:
+        VL6180x_RangeStartSingleShot(&m_vl6180_dev_right);
+        break;
+    case VISION_BACK:
+        VL6180x_RangeStartSingleShot(&m_vl6180_dev_rear);
+        break;
+    case VISION_UPSIDE:
+        VL6180x_RangeStartSingleShot(&m_vl6180_dev_body);
+        break;
+    default:
+        break;
+    }
+}
+
+int16_t vision_get_measure(Vision_Orientation orientation)
+{
+    VL6180x_RangeData_t range_data;
+    switch (orientation)
+    {
+    case VISION_FRONT:
+        return vision_get_front_dist();
+        break;
+    case VISION_LEFT_EYE:
+        return vision_get_vl6180x_dist(&m_vl6180_dev_eye_left);
+        break;
+    case VISION_RIGHT_EYE:
+        return vision_get_vl6180x_dist(&m_vl6180_dev_eye_right);
+        break;
+    case VISION_LEFT_SIDE:
+        return vision_get_vl6180x_dist(&m_vl6180_dev_left);
+        break;
+    case VISION_RIGHT_SIDE:
+        return vision_get_vl6180x_dist(&m_vl6180_dev_right);
+        break;
+    case VISION_BACK:
+        return vision_get_vl6180x_dist(&m_vl6180_dev_rear);
+        break;
+    case VISION_UPSIDE:
+        return vision_get_vl6180x_dist(&m_vl6180_dev_body);
+        break;
+    default:
+        break;
+    }
+}
+
 int16_t vision_get_front_dist(void)
 {
-    VL53L0X_Error error;
     VL53L0X_RangingMeasurementData_t range_data;
-    error = VL53L0X_PerformSingleRangingMeasurement(&m_vl53l0x_dev_front, &range_data);
-    if (error != VL53L0X_ERROR_NONE)
+    VL53L0X_Error Status = VL53L0X_ERROR_NONE;       
+    // error = VL53L0X_PerformSingleRangingMeasurement(&m_vl53l0x_dev_front, &range_data);
+
+    //if (Status == VL53L0X_ERROR_NONE)
+    //Status = VL53L0X_measurement_poll_for_completion(&m_vl53l0x_dev_front);
+
+    /* Change PAL State in case of single ranging or single histogram */
+    if (Status == VL53L0X_ERROR_NONE)
+        PALDevDataSet((&m_vl53l0x_dev_front), PalState, VL53L0X_STATE_IDLE);
+
+    if (Status == VL53L0X_ERROR_NONE)
+        Status = VL53L0X_GetRangingMeasurementData(&m_vl53l0x_dev_front, &range_data);
+
+    if (Status == VL53L0X_ERROR_NONE)
+        Status = VL53L0X_ClearInterruptMask(&m_vl53l0x_dev_front, 0);
+
+    if (Status != VL53L0X_ERROR_NONE)
     {
-        DEBUG_PRINTF(0, "VL53L0X_PerformSingleMeasurement error:%d \n", error);
+        DEBUG_PRINTF(0, "VL53L0X_PerformSingleMeasurement error:%d \n", Status);
         return 2000;
     }
     else
@@ -342,10 +431,19 @@ int16_t vision_get_front_dist(void)
     }
 }
 
-int16_t vision_get_rear_dist(void)
+int16_t vision_get_vl6180x_dist(VL6180xDev_t dev)
 {
+    int i = 0;
     VL6180x_RangeData_t range_data;
-    VL6180x_RangePollMeasurement(&m_vl6180_dev_rear, &range_data);
+    //VL6180x_RangePollMeasurement(&m_vl6180_dev_rear, &range_data);
+    //VL6180x_RangeGetMeasurementIfReady(dev, &range_data);
+    //VL6180x_RangeGetMeasurementPoll(dev, &range_data);
+    while(VL6180x_RangeGetMeasurementIfReady(dev, &range_data))
+    {
+        i++;
+        vTaskDelay(2);
+    }
+    DEBUG_PRINTF(0,"Count:%d\n", i);
     if(range_data.errorStatus != 0)
     {
         DEBUG_PRINTF(0, "VL6180x_RangePollMeasurement error:%d-%s \n",range_data.errorStatus, VL6180x_RangeGetStatusErrString(range_data.errorStatus));

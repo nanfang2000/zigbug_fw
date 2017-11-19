@@ -176,22 +176,25 @@ void enable_breath_led(uint32_t meas_interval_ms)
  *
  * @param[in] pvParameter   Pointer that will be used as the parameter for the task.
  */
- static void vision_task_function (void * pvParameter)
- {
-     UNUSED_PARAMETER(pvParameter);
-     while (true)
-     { 
-         int16_t dist = vision_get_front_dist();
-         if(dist <= 150)
-         {
-             motor_start(-SPEED,SPEED);
-         }
-         else
-         {
-             motor_start(SPEED, SPEED);
-         }
-     }
- }
+static void vision_task_function(void *pvParameter)
+{
+    UNUSED_PARAMETER(pvParameter);
+    vision_init();
+    while (true)
+    {
+        vision_start_measure(VISION_LEFT_EYE);
+        vTaskDelay(10);
+        int16_t dist = vision_get_measure(VISION_LEFT_EYE);
+        if (dist <= 150)
+        {
+            motor_start(-SPEED, SPEED);
+        }
+        else
+        {
+            motor_start(SPEED, SPEED);
+        }
+    }
+}
 
 /**
  * @brief Function for application main entry.
@@ -206,7 +209,7 @@ int main(void)
     nrf_drv_gpiote_init();
     audio_init();
     mic_init();
-    vision_init();
+    //vision_init();
     motor_init();
     //batt_meas_init(NULL);
     //batt_meas_enable(5000);
