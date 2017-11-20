@@ -1,5 +1,5 @@
 /*******************************************************************************
-Copyright © 2014, STMicroelectronics International N.V.
+Copyright ï¿½ 2014, STMicroelectronics International N.V.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -1544,6 +1544,9 @@ int VL6180x_RangeStartSingleShot(VL6180xDev_t dev) {
     int status;
     LOG_FUNCTION_START("");
     status = VL6180x_RangeSetSystemMode(dev, MODE_START_STOP|MODE_SINGLESHOT);
+    /* Read interrupt status to start scan */
+    IntrStatus_t IntStatus;
+    status = VL6180x_RangeGetInterruptStatus(dev, &IntStatus.val);
     LOG_FUNCTION_END(status);
     return status;
 }
