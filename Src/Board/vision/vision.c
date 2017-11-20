@@ -320,12 +320,11 @@ void vision_start()
 //    }
 }
 
-void vision_start_measure(Vision_Orientation orientation)
+void vision_start_measure(int32_t orientations)
 {
-    VL53L0X_Error Status;
-    switch (orientation)
-    {
-    case VISION_FRONT:
+    if(orientations & VISION_FRONT)
+    {    
+        VL53L0X_Error Status;
         Status = VL53L0X_ERROR_NONE;   
         /* This function will do a complete single ranging
          * Here we fix the mode! */
@@ -333,60 +332,74 @@ void vision_start_measure(Vision_Orientation orientation)
     
         if (Status == VL53L0X_ERROR_NONE)
             Status = VL53L0X_StartMeasurement(&m_vl53l0x_dev_front);
-
-        break;
-    case VISION_LEFT_EYE:
-        VL6180x_RangeStartSingleShot(&m_vl6180_dev_eye_left);
-        VL6180x_RangeGetMeasurementIfReady(&m_vl6180_dev_eye_left,0);
-        break;
-    case VISION_RIGHT_EYE:
-        VL6180x_RangeStartSingleShot(&m_vl6180_dev_eye_right);
-        break;
-    case VISION_LEFT_SIDE:
-        VL6180x_RangeStartSingleShot(&m_vl6180_dev_left);
-        break;
-    case VISION_RIGHT_SIDE:
-        VL6180x_RangeStartSingleShot(&m_vl6180_dev_right);
-        break;
-    case VISION_BACK:
-        VL6180x_RangeStartSingleShot(&m_vl6180_dev_rear);
-        break;
-    case VISION_UPSIDE:
+    }
+        
+    if(orientations & VISION_UPSIDE)
+    {
         VL6180x_RangeStartSingleShot(&m_vl6180_dev_body);
-        break;
-    default:
-        break;
+    }
+
+    if(orientations & VISION_LEFT_EYE)
+    {
+        VL6180x_RangeStartSingleShot(&m_vl6180_dev_eye_left);
+    }
+
+    if(orientations & VISION_RIGHT_EYE)
+    {
+        VL6180x_RangeStartSingleShot(&m_vl6180_dev_eye_right);
+    }
+
+    if(orientations & VISION_LEFT_SIDE)
+    {
+        VL6180x_RangeStartSingleShot(&m_vl6180_dev_left);
+    }
+
+    if(orientations & VISION_RIGHT_SIDE)
+    {
+        VL6180x_RangeStartSingleShot(&m_vl6180_dev_right);
+    }
+
+    if(orientations & VISION_BACK)
+    {
+        VL6180x_RangeStartSingleShot(&m_vl6180_dev_rear);
     }
 }
 
-int16_t vision_get_measure(Vision_Orientation orientation)
+void vision_get_measure(int32_t orientations, vision_t *vision)
 {
-    VL6180x_RangeData_t range_data;
-    switch (orientation)
+    if(orientations & VISION_FRONT)
+    {    
+        vision->dist_front = vision_get_front_dist();
+    }
+        
+    if(orientations & VISION_UPSIDE)
     {
-    case VISION_FRONT:
-        return vision_get_front_dist();
-        break;
-    case VISION_LEFT_EYE:
-        return vision_get_vl6180x_dist(&m_vl6180_dev_eye_left);
-        break;
-    case VISION_RIGHT_EYE:
-        return vision_get_vl6180x_dist(&m_vl6180_dev_eye_right);
-        break;
-    case VISION_LEFT_SIDE:
-        return vision_get_vl6180x_dist(&m_vl6180_dev_left);
-        break;
-    case VISION_RIGHT_SIDE:
-        return vision_get_vl6180x_dist(&m_vl6180_dev_right);
-        break;
-    case VISION_BACK:
-        return vision_get_vl6180x_dist(&m_vl6180_dev_rear);
-        break;
-    case VISION_UPSIDE:
-        return vision_get_vl6180x_dist(&m_vl6180_dev_body);
-        break;
-    default:
-        break;
+        vision->dist_upside= vision_get_vl6180x_dist(&m_vl6180_dev_body);
+    }
+
+    if(orientations & VISION_LEFT_EYE)
+    {
+        vision->dist_left_eye= vision_get_vl6180x_dist(&m_vl6180_dev_eye_left);
+    }
+
+    if(orientations & VISION_RIGHT_EYE)
+    {
+        vision->dist_right_eye= vision_get_vl6180x_dist(&m_vl6180_dev_eye_right);
+    }
+
+    if(orientations & VISION_LEFT_SIDE)
+    {
+        vision->dist_left_side= vision_get_vl6180x_dist(&m_vl6180_dev_left);
+    }
+
+    if(orientations & VISION_RIGHT_SIDE)
+    {
+        vision->dist_right_side = vision_get_vl6180x_dist(&m_vl6180_dev_right);
+    }
+
+    if(orientations & VISION_BACK)
+    {
+        vision->dist_back= vision_get_vl6180x_dist(&m_vl6180_dev_rear);
     }
 }
 
@@ -433,17 +446,21 @@ int16_t vision_get_front_dist(void)
 
 int16_t vision_get_vl6180x_dist(VL6180xDev_t dev)
 {
-    int i = 0;
+    int i = 10;
     VL6180x_RangeData_t range_data;
     //VL6180x_RangePollMeasurement(&m_vl6180_dev_rear, &range_data);
     //VL6180x_RangeGetMeasurementIfReady(dev, &range_data);
     //VL6180x_RangeGetMeasurementPoll(dev, &range_data);
     while(VL6180x_RangeGetMeasurementIfReady(dev, &range_data))
     {
-        i++;
+        i--;
         vTaskDelay(2);
+        if(i == 0)
+        {
+            break;
+        }
     }
-    DEBUG_PRINTF(0,"Count:%d\n", i);
+
     if(range_data.errorStatus != 0)
     {
         DEBUG_PRINTF(0, "VL6180x_RangePollMeasurement error:%d-%s \n",range_data.errorStatus, VL6180x_RangeGetStatusErrString(range_data.errorStatus));

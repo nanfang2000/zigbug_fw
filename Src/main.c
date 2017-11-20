@@ -179,15 +179,36 @@ void enable_breath_led(uint32_t meas_interval_ms)
 static void vision_task_function(void *pvParameter)
 {
     UNUSED_PARAMETER(pvParameter);
+    vision_t vision;
     vision_init();
     while (true)
     {
-        vision_start_measure(VISION_LEFT_EYE);
-        vTaskDelay(10);
-        int16_t dist = vision_get_measure(VISION_LEFT_EYE);
-        if (dist <= 150)
+        vision_start_measure(VISION_ALL);
+        vTaskDelay(30);
+        vision_get_measure(VISION_ALL, &vision);
+        if(vision.dist_upside>= 0 && vision.dist_upside <= 150)
+        {
+            motor_start(0, 0);
+        }
+        else if (vision.dist_front >= 0 && vision.dist_front <= 150)
         {
             motor_start(-SPEED, SPEED);
+        }
+        else if (vision.dist_left_eye>= 0 && vision.dist_back <= 100)
+        {
+            motor_start(-SPEED, SPEED);
+        }
+        else if (vision.dist_right_eye>= 0 && vision.dist_right_eye <= 100)
+        {
+            motor_start(SPEED, -SPEED);
+        }
+        else if (vision.dist_left_side>= 0 && vision.dist_left_side <= 100)
+        {
+            motor_start(-SPEED, SPEED);
+        }
+        else if (vision.dist_right_side>= 0 && vision.dist_right_side <= 100)
+        {
+            motor_start(SPEED, -SPEED);
         }
         else
         {
