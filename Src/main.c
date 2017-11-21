@@ -194,21 +194,25 @@ static void vision_task_function(void *pvParameter)
         {
             motor_start(-SPEED, SPEED);
         }
-        else if (vision.dist_left_eye>= 0 && vision.dist_back <= 100)
+        else if (vision.dist_back >= 0 && vision.dist_back <= 100)
         {
-            motor_start(-SPEED, SPEED);
+            motor_start(SPEED, SPEED);
+        }
+        else if (vision.dist_left_eye>= 0 && vision.dist_left_eye <= 100)
+        {
+            motor_start(-SPEED, -(SPEED+5));
         }
         else if (vision.dist_right_eye>= 0 && vision.dist_right_eye <= 100)
         {
-            motor_start(SPEED, -SPEED);
+            motor_start(-(SPEED+5), -SPEED);
         }
         else if (vision.dist_left_side>= 0 && vision.dist_left_side <= 100)
         {
-            motor_start(-SPEED, SPEED);
+            motor_start(-SPEED, -(SPEED+5));
         }
         else if (vision.dist_right_side>= 0 && vision.dist_right_side <= 100)
         {
-            motor_start(SPEED, -SPEED);
+            motor_start(-(SPEED+5), -SPEED);
         }
         else
         {
