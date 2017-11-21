@@ -10,7 +10,7 @@
 static const nrf_drv_spi_t *m_spi_instance;// = NRF_DRV_SPI_INSTANCE(SPI0_INSTANCE_INDEX);
 static nrf_drv_spi_config_t m_spi_config = 
 {                                                            \
-    .sck_pin      = NRF_DRV_SPI_PIN_NOT_USED,                \
+    .sck_pin      = 22,                \
     .mosi_pin     = 22,                \
     .miso_pin     = NRF_DRV_SPI_PIN_NOT_USED,                \
     .ss_pin       = NRF_DRV_SPI_PIN_NOT_USED,                \
