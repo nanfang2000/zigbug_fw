@@ -158,6 +158,7 @@ uint32_t batt_meas_enable(uint32_t meas_interval_ms);
  * @return Other codes from the underlying driver
  */
 uint32_t batt_meas_disable(void);
+void batt_meas_start(void);
 
 uint8_t batt_meas_get_level(void);
 

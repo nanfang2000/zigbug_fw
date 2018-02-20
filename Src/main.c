@@ -124,6 +124,8 @@ static void lfclk_config(void)
 TaskHandle_t  led_toggle_task_handle;   /**< Reference to LED0 toggling FreeRTOS task. */
 TaskHandle_t  vision_task_handle;   /**< Reference to LED0 toggling FreeRTOS task. */
 TaskHandle_t  motion_task_handle;   /**< Reference to LED0 toggling FreeRTOS task. */
+TaskHandle_t  batt_meas_task_handle;   /**< Reference to LED0 toggling FreeRTOS task. */
+TaskHandle_t  scheduler_task_handle;   /**< Reference to LED0 toggling FreeRTOS task. */
 TimerHandle_t led_toggle_timer_handle;  /**< Reference to LED1 toggling FreeRTOS timer. */
 
 /**@brief LED0 task entry function.
@@ -257,6 +259,27 @@ static void motion_update_task_function(void *pvParameter)
     }
 }
 
+static void battery_meas_task_function(void *pvParameter)
+{
+    UNUSED_PARAMETER(pvParameter);
+    batt_meas_init(NULL);
+    while (true)
+    {
+        batt_meas_start();
+        vTaskDelay(5000);
+    }
+}
+
+static void scheduler_task_function(void *pvParameter)
+{
+    UNUSED_PARAMETER(pvParameter);
+    while (true)
+    {
+        app_sched_execute();
+        vTaskDelay(100);
+    }
+}
+
 /**
  * @brief Function for application main entry.
  */
@@ -280,10 +303,12 @@ int main(void)
     //enable_breath_led(1000);
     /* Toggle LEDs. */
     /* Create task for LED0 blinking with priority set to 2 */
-    UNUSED_VARIABLE(xTaskCreate(led_toggle_task_function, "LED0", configMINIMAL_STACK_SIZE + 200, NULL, 2, &led_toggle_task_handle));
+    UNUSED_VARIABLE(xTaskCreate(led_toggle_task_function, "LED0", configMINIMAL_STACK_SIZE + 100, NULL, 2, &led_toggle_task_handle));
 
     //UNUSED_VARIABLE(xTaskCreate(vision_task_function, "VISION", configMINIMAL_STACK_SIZE + 200, NULL, 3, &vision_task_handle));
-    UNUSED_VARIABLE(xTaskCreate(motion_update_task_function, "Motion", configMINIMAL_STACK_SIZE + 200, NULL, 3, &motion_task_handle));
+    //UNUSED_VARIABLE(xTaskCreate(motion_update_task_function, "Motion", configMINIMAL_STACK_SIZE + 200, NULL, 3, &motion_task_handle));
+    UNUSED_VARIABLE(xTaskCreate(scheduler_task_function, "Scheduler", configMINIMAL_STACK_SIZE + 100, NULL, 5, &scheduler_task_handle));
+    UNUSED_VARIABLE(xTaskCreate(battery_meas_task_function, "Battery", configMINIMAL_STACK_SIZE + 100, NULL, 4, &batt_meas_task_handle));
 
     /* Activate deep sleep mode */
     SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;

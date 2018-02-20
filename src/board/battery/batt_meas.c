@@ -358,15 +358,8 @@ static uint32_t saadc_init(void)
  */
 static void app_timer_periodic_handler(void * unused)
 {
-    uint32_t err_code;
-
-    err_code = saadc_init();
-    APP_ERROR_CHECK(err_code);
-
-    err_code = nrf_drv_saadc_sample();
-    APP_ERROR_CHECK(err_code);
+    batt_meas_start();
 }
-
 
 /** @brief Checks validity of supplied parameters.
  */
@@ -522,8 +515,12 @@ uint32_t batt_meas_enable(uint32_t meas_interval_ms)
     }
 
     // Call for a battery voltage sample immediately after enabling battery measurements.
-    app_timer_periodic_handler(NULL);
+    batt_meas_start();
 
+    #ifndef FREERTOS
+    #define FREERTOS
+    #endif
+    #ifndef FREERTOS
     err_code = app_timer_create(&batt_meas_app_timer_id,
                                 APP_TIMER_MODE_REPEATED,
                                 app_timer_periodic_handler);
@@ -532,6 +529,7 @@ uint32_t batt_meas_enable(uint32_t meas_interval_ms)
     err_code = app_timer_start(batt_meas_app_timer_id,
                                APP_TIMER_TICKS(meas_interval_ms), NULL);
     RETURN_IF_ERROR(err_code);
+    #endif
 
     return BATT_STATUS_CODE_SUCCESS;
 }
@@ -547,8 +545,10 @@ uint32_t batt_meas_disable(void)
 //        RETURN_IF_ERROR(err_code);
     }
 
+    #ifndef FREERTOS
     err_code = app_timer_stop(batt_meas_app_timer_id);
     RETURN_IF_ERROR(err_code);
+    #endif
 
     return BATT_STATUS_CODE_SUCCESS;
 }
@@ -639,6 +639,19 @@ uint32_t batt_meas_init(batt_meas_event_handler_t event_handler)
     RETURN_IF_ERROR(err_code);
 
     return BATT_STATUS_CODE_SUCCESS;
+}
+
+/** @brief start battery measurement
+ */
+void batt_meas_start(void)
+{
+    uint32_t err_code;
+
+    err_code = saadc_init();
+    APP_ERROR_CHECK(err_code);
+
+    err_code = nrf_drv_saadc_sample();
+    APP_ERROR_CHECK(err_code);
 }
 
 uint8_t batt_meas_get_level(void)
