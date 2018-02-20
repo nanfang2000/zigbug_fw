@@ -66,6 +66,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "timers.h"
+#include "motion.h"
 
 #define LOCAL_DEBUG
 #include "debug.h"
@@ -122,6 +123,7 @@ static void lfclk_config(void)
 
 TaskHandle_t  led_toggle_task_handle;   /**< Reference to LED0 toggling FreeRTOS task. */
 TaskHandle_t  vision_task_handle;   /**< Reference to LED0 toggling FreeRTOS task. */
+TaskHandle_t  motion_task_handle;   /**< Reference to LED0 toggling FreeRTOS task. */
 TimerHandle_t led_toggle_timer_handle;  /**< Reference to LED1 toggling FreeRTOS timer. */
 
 /**@brief LED0 task entry function.
@@ -221,6 +223,40 @@ static void vision_task_function(void *pvParameter)
     }
 }
 
+static void motion_update_task_function(void *pvParameter)
+{
+    UNUSED_PARAMETER(pvParameter);
+    motion_raw_t motion_raw;
+    motion_init();
+    while (true)
+    {
+        motion_read_raw(&motion_raw);
+        motion_update(&motion_raw);
+        DEBUG_PRINTF(0, "motion:%dms, yaw=%d\r\n", (int32_t)(motion_raw.timestamp*1000),
+                                                                    (int32_t)(motion_get_data()->euler.yaw*10));
+        #if 0
+        int32_t delta = motion_get_data()->euler.yaw*10 - 60;
+        
+        if(abs(delta) > 10)
+        {
+          motor_start(-delta, delta);
+        }
+        else
+        {
+          motor_start(0, 0);
+        }
+        #else 
+        int32_t delta = motion_get_data()->euler.yaw*10 - 0;
+        if(abs(delta) > 40)
+        {
+          delta = 40;
+        }
+        motor_start(SPEED-delta/5, SPEED+delta/5);
+        #endif
+        vTaskDelay(5);
+    }
+}
+
 /**
  * @brief Function for application main entry.
  */
@@ -236,6 +272,7 @@ int main(void)
     mic_init();
     //vision_init();
     motor_init();
+    //motion_init();
     //batt_meas_init(NULL);
     //batt_meas_enable(5000);
     //motor_start(-SPEED, -SPEED);
@@ -245,8 +282,9 @@ int main(void)
     /* Create task for LED0 blinking with priority set to 2 */
     UNUSED_VARIABLE(xTaskCreate(led_toggle_task_function, "LED0", configMINIMAL_STACK_SIZE + 200, NULL, 2, &led_toggle_task_handle));
 
-    UNUSED_VARIABLE(xTaskCreate(vision_task_function, "VISION", configMINIMAL_STACK_SIZE + 200, NULL, 3, &vision_task_handle));
-    
+    //UNUSED_VARIABLE(xTaskCreate(vision_task_function, "VISION", configMINIMAL_STACK_SIZE + 200, NULL, 3, &vision_task_handle));
+    UNUSED_VARIABLE(xTaskCreate(motion_update_task_function, "Motion", configMINIMAL_STACK_SIZE + 200, NULL, 3, &motion_task_handle));
+
     /* Activate deep sleep mode */
     SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
 
