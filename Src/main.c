@@ -236,24 +236,28 @@ static void motion_update_task_function(void *pvParameter)
         motion_update(&motion_raw);
         DEBUG_PRINTF(0, "motion:%dms, yaw=%d\r\n", (int32_t)(motion_raw.timestamp*1000),
                                                                     (int32_t)(motion_get_data()->euler.yaw*10));
-        #if 0
+        #if 1
         int32_t delta = motion_get_data()->euler.yaw*10 - 60;
         
         if(abs(delta) > 10)
         {
-          motor_start(-delta, delta);
+          motor_start(-delta/3, delta/3);
         }
         else
         {
           motor_start(0, 0);
         }
         #else 
-        int32_t delta = motion_get_data()->euler.yaw*10 - 0;
-        if(abs(delta) > 40)
-        {
-          delta = 40;
-        }
-        motor_start(SPEED-delta/5, SPEED+delta/5);
+       int32_t delta = motion_get_data()->euler.yaw*10 - 0;
+       if(delta > 40)
+       {
+         delta = 40;
+       }
+       else if(delta < -40)
+       {
+           delta = -40;
+       }
+       motor_start(SPEED-delta/5, SPEED+delta/5);
         #endif
         vTaskDelay(5);
     }
@@ -295,6 +299,14 @@ int main(void)
     mic_init();
     //vision_init();
     motor_init();
+    //motor_start(10, 10);
+    // while(1)
+    // {
+    // motor_start(100, 100);
+    // nrf_delay_ms(2);
+    // motor_start(0, 0);
+    // nrf_delay_ms(8);
+    // }
     //motion_init();
     //batt_meas_init(NULL);
     //batt_meas_enable(5000);
@@ -306,9 +318,9 @@ int main(void)
     UNUSED_VARIABLE(xTaskCreate(led_toggle_task_function, "LED0", configMINIMAL_STACK_SIZE + 100, NULL, 2, &led_toggle_task_handle));
 
     //UNUSED_VARIABLE(xTaskCreate(vision_task_function, "VISION", configMINIMAL_STACK_SIZE + 200, NULL, 3, &vision_task_handle));
-    //UNUSED_VARIABLE(xTaskCreate(motion_update_task_function, "Motion", configMINIMAL_STACK_SIZE + 200, NULL, 3, &motion_task_handle));
-    UNUSED_VARIABLE(xTaskCreate(scheduler_task_function, "Scheduler", configMINIMAL_STACK_SIZE + 100, NULL, 5, &scheduler_task_handle));
-    UNUSED_VARIABLE(xTaskCreate(battery_meas_task_function, "Battery", configMINIMAL_STACK_SIZE + 100, NULL, 4, &batt_meas_task_handle));
+    UNUSED_VARIABLE(xTaskCreate(motion_update_task_function, "Motion", configMINIMAL_STACK_SIZE + 200, NULL, 3, &motion_task_handle));
+    //UNUSED_VARIABLE(xTaskCreate(scheduler_task_function, "Scheduler", configMINIMAL_STACK_SIZE + 100, NULL, 5, &scheduler_task_handle));
+    //UNUSED_VARIABLE(xTaskCreate(battery_meas_task_function, "Battery", configMINIMAL_STACK_SIZE + 100, NULL, 4, &batt_meas_task_handle));
 
     /* Activate deep sleep mode */
     SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;

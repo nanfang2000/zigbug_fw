@@ -60,7 +60,7 @@ void motor_init(void)
 //    APP_ERROR_CHECK(nrf_drv_pwm_init(&m_pwm_motor_instance, &m_pwm_motor_config, NULL));
 }
 
-static void motor_pwm_update_duty_cycle(uint8_t duty_cycle0, uint8_t duty_cycle1)
+static void motor_pwm_update_duty_cycle(uint16_t duty_cycle0, uint16_t duty_cycle1)
 {
     
     // Check if value is outside of range. If so, set to 100%
@@ -70,7 +70,7 @@ static void motor_pwm_update_duty_cycle(uint8_t duty_cycle0, uint8_t duty_cycle1
     }
     else
     {
-        m_pwm_seq_values->channel_0 = 100 - duty_cycle0;
+        m_pwm_seq_values->channel_0 = (100 - duty_cycle0)*1;
     }
 
     if(duty_cycle1 >= 100)
@@ -79,13 +79,13 @@ static void motor_pwm_update_duty_cycle(uint8_t duty_cycle0, uint8_t duty_cycle1
     }
     else
     {
-        m_pwm_seq_values->channel_1 = 100 - duty_cycle1;
+        m_pwm_seq_values->channel_1 = (100 - duty_cycle1)*1;
     }
     
     nrf_drv_pwm_simple_playback(&m_pwm_motor_instance, &m_pwm_seq, 1, NRF_DRV_PWM_FLAG_LOOP);
 }
 
-void motor_start(int8_t left_speed, int8_t right_speed)
+void motor_start(int16_t left_speed, int16_t right_speed)
 {
     uint8_t duty_left;
     uint8_t duty_right;
