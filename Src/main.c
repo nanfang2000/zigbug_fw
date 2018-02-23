@@ -67,6 +67,7 @@
 #include "task.h"
 #include "timers.h"
 #include "motion.h"
+#include "pid.h"
 
 #define LOCAL_DEBUG
 #include "debug.h"
@@ -228,36 +229,37 @@ static void vision_task_function(void *pvParameter)
 static void motion_update_task_function(void *pvParameter)
 {
     UNUSED_PARAMETER(pvParameter);
+    pid_t pid;
     motion_raw_t motion_raw;
     motion_init();
+    pid_init(&pid, 0.6, 0.005, 5.5);
     while (true)
     {
         motion_read_raw(&motion_raw);
         motion_update(&motion_raw);
-        DEBUG_PRINTF(0, "motion:%dms, yaw=%d\r\n", (int32_t)(motion_raw.timestamp*1000),
-                                                                    (int32_t)(motion_get_data()->euler.yaw*10));
-        #if 1
-        int32_t delta = motion_get_data()->euler.yaw*10 - 60;
-        
-        if(abs(delta) > 10)
-        {
-          motor_start(-delta/3, delta/3);
-        }
-        else
-        {
-          motor_start(0, 0);
-        }
+//        DEBUG_PRINTF(0, "motion:%dms, yaw=%d\r\n", (int32_t)(motion_raw.timestamp*1000),
+//                                                                    (int32_t)(motion_get_data()->euler.yaw*10));
+        #if 0
+        float cur_degree = motion_get_data()->euler.yaw*10;
+        int32_t delta = cur_degree - 60;
+        float next_motor = pid_process(&pid, 90.f, cur_degree);
+        DEBUG_PRINTF(0, "motion:%dms, yaw=%d, next_pwm=%d\r\n", (int32_t)(motion_raw.timestamp*1000),
+                                                                    (int32_t)(cur_degree), (int32_t)(next_motor));
+        motor_start((int16_t)next_motor, -(int16_t)next_motor);
         #else 
-       int32_t delta = motion_get_data()->euler.yaw*10 - 0;
-       if(delta > 40)
-       {
-         delta = 40;
-       }
-       else if(delta < -40)
-       {
-           delta = -40;
-       }
-       motor_start(SPEED-delta/5, SPEED+delta/5);
+        float cur_degree = motion_get_data()->euler.yaw*10;
+        float next_motor = pid_process(&pid, 0, cur_degree);
+        motor_start(SPEED+(int16_t)next_motor, SPEED-(int16_t)next_motor);
+//       int32_t delta = motion_get_data()->euler.yaw*10 - 0;
+//       if(delta > 40)
+//       {
+//         delta = 40;
+//       }
+//       else if(delta < -40)
+//       {
+//           delta = -40;
+//       }
+//       motor_start(SPEED-delta/5, SPEED+delta/5);
         #endif
         vTaskDelay(5);
     }
