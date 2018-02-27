@@ -126,6 +126,7 @@ TaskHandle_t  led_toggle_task_handle;   /**< Reference to LED0 toggling FreeRTOS
 TaskHandle_t  vision_task_handle;   /**< Reference to LED0 toggling FreeRTOS task. */
 TaskHandle_t  motion_task_handle;   /**< Reference to LED0 toggling FreeRTOS task. */
 TaskHandle_t  batt_meas_task_handle;   /**< Reference to LED0 toggling FreeRTOS task. */
+TaskHandle_t  zigbug_task_handle;   /**< Reference to LED0 toggling FreeRTOS task. */
 TaskHandle_t  scheduler_task_handle;   /**< Reference to LED0 toggling FreeRTOS task. */
 TimerHandle_t led_toggle_timer_handle;  /**< Reference to LED1 toggling FreeRTOS timer. */
 
@@ -176,7 +177,9 @@ void enable_breath_led(uint32_t meas_interval_ms)
                                 APP_TIMER_TICKS(meas_interval_ms), NULL);
     RETURN_IF_ERROR(err_code);
 }
-
+vision_t vision;
+motion_raw_t motion_raw;
+//#include <string.h>
 /**@brief LED0 task entry function.
  *
  * @param[in] pvParameter   Pointer that will be used as the parameter for the task.
@@ -184,72 +187,79 @@ void enable_breath_led(uint32_t meas_interval_ms)
 static void vision_task_function(void *pvParameter)
 {
     UNUSED_PARAMETER(pvParameter);
-    vision_t vision;
     vision_init();
+    motion_init();
+    memset(&vision, 0, sizeof(vision));
     while (true)
     {
         vision_start_measure(VISION_ALL);
-        vTaskDelay(30);
+        vTaskDelay(5);
+        motion_read_raw(&motion_raw);
+        motion_update(&motion_raw);
+        vTaskDelay(5);
+        motion_read_raw(&motion_raw);
+        motion_update(&motion_raw);
+        vTaskDelay(5);
+        motion_read_raw(&motion_raw);
+        motion_update(&motion_raw);
+        vTaskDelay(5);
+        motion_read_raw(&motion_raw);
+        motion_update(&motion_raw);
+        vTaskDelay(5);
+        motion_read_raw(&motion_raw);
+        motion_update(&motion_raw);
+        vTaskDelay(5);
         vision_get_measure(VISION_ALL, &vision);
-        if(vision.dist_upside>= 0 && vision.dist_upside <= 150)
-        {
-            motor_start(0, 0);
-        }
-        else if (vision.dist_front >= 0 && vision.dist_front <= 150)
-        {
-            motor_start(-SPEED, SPEED);
-        }
-        else if (vision.dist_back >= 0 && vision.dist_back <= 100)
-        {
-            motor_start(SPEED, SPEED);
-        }
-        else if (vision.dist_left_eye>= 0 && vision.dist_left_eye <= 100)
-        {
-            motor_start(-SPEED, -(SPEED+5));
-        }
-        else if (vision.dist_right_eye>= 0 && vision.dist_right_eye <= 100)
-        {
-            motor_start(-(SPEED+5), -SPEED);
-        }
-        else if (vision.dist_left_side>= 0 && vision.dist_left_side <= 100)
-        {
-            motor_start(-SPEED, -(SPEED+5));
-        }
-        else if (vision.dist_right_side>= 0 && vision.dist_right_side <= 100)
-        {
-            motor_start(-(SPEED+5), -SPEED);
-        }
-        else
-        {
-            motor_start(SPEED, SPEED);
-        }
+        
     }
 }
 
+#define TEST_NO  3
 static void motion_update_task_function(void *pvParameter)
 {
     UNUSED_PARAMETER(pvParameter);
-    pid_t pid;
-    motion_raw_t motion_raw;
+    pid_t pid,pid_barrier;
+
     motion_init();
     pid_init(&pid, 0.6, 0.005, 5.5);
+    vTaskDelay(20);
+    //pid_init(&pid_barrier, 0.6, 0.005, 0.5);
     while (true)
     {
         motion_read_raw(&motion_raw);
         motion_update(&motion_raw);
 //        DEBUG_PRINTF(0, "motion:%dms, yaw=%d\r\n", (int32_t)(motion_raw.timestamp*1000),
 //                                                                    (int32_t)(motion_get_data()->euler.yaw*10));
-        #if 0
+        #if (TEST_NO == 0)
         float cur_degree = motion_get_data()->euler.yaw*10;
         int32_t delta = cur_degree - 60;
         float next_motor = pid_process(&pid, 90.f, cur_degree);
         DEBUG_PRINTF(0, "motion:%dms, yaw=%d, next_pwm=%d\r\n", (int32_t)(motion_raw.timestamp*1000),
                                                                     (int32_t)(cur_degree), (int32_t)(next_motor));
         motor_start((int16_t)next_motor, -(int16_t)next_motor);
-        #else 
-        float cur_degree = motion_get_data()->euler.yaw*10;
-        float next_motor = pid_process(&pid, 0, cur_degree);
-        motor_start(SPEED+(int16_t)next_motor, SPEED-(int16_t)next_motor);
+        #elif (TEST_NO == 1)
+        float barrier_force = abs(vision.dist_right_side);
+        if(vision.dist_right_side == 0)
+        {
+            barrier_force = 0;
+        }
+        else if(vision.dist_right_side > 100)
+        {
+            barrier_force = 0;
+        }
+        else
+        {
+            barrier_force = 100 - vision.dist_right_side;
+        }
+        float next_motor = pid_process(&pid_barrier, 0, barrier_force);
+        if(barrier_force == 0)
+        {
+          motor_start(0, 0);
+        }
+        else
+        {
+          motor_start(SPEED+(int16_t)next_motor, SPEED-(int16_t)next_motor);
+        }
 //       int32_t delta = motion_get_data()->euler.yaw*10 - 0;
 //       if(delta > 40)
 //       {
@@ -260,11 +270,94 @@ static void motion_update_task_function(void *pvParameter)
 //           delta = -40;
 //       }
 //       motor_start(SPEED-delta/5, SPEED+delta/5);
+        #elif (TEST_NO == 2)
+        float cur_degree = motion_get_data()->euler.yaw*10;
+        float next_motor = pid_process(&pid, 0, cur_degree);
+        motor_start(SPEED+(int16_t)next_motor, SPEED-(int16_t)next_motor);
         #endif
         vTaskDelay(5);
     }
 }
+#define TEST_NO1  1
+static void zigbug_run_task_function(void *pvParameter)
+{
+    UNUSED_PARAMETER(pvParameter);
+    float target_angle;
+    pid_t pid,pid_barrier_right, pid_barrier_left;
 
+    while (true)
+    {
+        #if (TEST_NO1 == 0)
+        float cur_degree = motion_get_data()->euler.yaw*10;
+        float next_motor = pid_process(&pid, 90.f, cur_degree);
+        DEBUG_PRINTF(0, "motion:%dms, yaw=%d, next_pwm=%d\r\n", (int32_t)(motion_raw.timestamp*1000),
+                                                                    (int32_t)(cur_degree), (int32_t)(next_motor));
+        motor_start((int16_t)next_motor, -(int16_t)next_motor);
+        #elif (TEST_NO1 == 1)
+        float barrier_force_left = abs(vision.dist_left_side);
+        float barrier_force_right = abs(vision.dist_right_side);
+        if(vision.dist_right_side == 0)
+        {
+            barrier_force_right = 0;
+        }
+        else if(vision.dist_right_side > 100)
+        {
+            barrier_force_right = 0;
+        }
+        else
+        {
+            barrier_force_right = 100 - vision.dist_right_side;
+        }
+        if(vision.dist_left_side == 0)
+        {
+            barrier_force_left = 0;
+        }
+        else if(vision.dist_left_side > 100)
+        {
+            barrier_force_left = 0;
+        }
+        else
+        {
+            barrier_force_left = 100 - vision.dist_left_side;
+        }
+        if(barrier_force_left == 0 && barrier_force_right == 0)
+        {
+          target_angle = motion_get_data()->euler.yaw*10;
+          pid_init(&pid, 0.3, 0.000, 1.0);
+          pid_init(&pid_barrier_left, 0.2, 0.000, 0.0);
+          pid_init(&pid_barrier_right, 0.2, 0.000, 0.0);
+          motor_start(0, 0);
+        }
+        else
+        {
+          if(barrier_force_left > 0)
+          {
+            target_angle += 90;
+          }
+          else if (barrier_force_right > 0)
+          {
+            target_angle -= 90;
+          }
+          for(int32_t i = 0; i < 50; i++)
+          {
+            float cur_degree = motion_get_data()->euler.yaw*10;
+            float next_motor1 = pid_process(&pid, target_angle, cur_degree);
+            float next_motor2 = pid_process(&pid_barrier_right, 0, barrier_force_right);
+            float next_motor3 = -pid_process(&pid_barrier_left, 0, barrier_force_left);
+            motor_start(SPEED+(int16_t)(next_motor1+next_motor2+next_motor3), SPEED-(int16_t)(next_motor1+next_motor2+next_motor3));
+            vTaskDelay(5);
+          }
+//          float next_motor = pid_process(&pid_barrier, 0, barrier_force);
+//          motor_start(SPEED+(int16_t)next_motor, SPEED-(int16_t)next_motor);
+        }
+        #else
+        float cur_degree = motion_get_data()->euler.yaw*10;
+        float next_motor = pid_process(&pid, 0, cur_degree);
+        motor_start(SPEED+(int16_t)next_motor, SPEED-(int16_t)next_motor);
+        #endif
+        vTaskDelay(20);
+    }
+}
 static void battery_meas_task_function(void *pvParameter)
 {
     UNUSED_PARAMETER(pvParameter);
@@ -317,12 +410,13 @@ int main(void)
     //enable_breath_led(1000);
     /* Toggle LEDs. */
     /* Create task for LED0 blinking with priority set to 2 */
-    UNUSED_VARIABLE(xTaskCreate(led_toggle_task_function, "LED0", configMINIMAL_STACK_SIZE + 100, NULL, 2, &led_toggle_task_handle));
+    UNUSED_VARIABLE(xTaskCreate(led_toggle_task_function, "LED0", configMINIMAL_STACK_SIZE + 100, NULL, 1, &led_toggle_task_handle));
 
-    //UNUSED_VARIABLE(xTaskCreate(vision_task_function, "VISION", configMINIMAL_STACK_SIZE + 200, NULL, 3, &vision_task_handle));
-    UNUSED_VARIABLE(xTaskCreate(motion_update_task_function, "Motion", configMINIMAL_STACK_SIZE + 200, NULL, 3, &motion_task_handle));
-    //UNUSED_VARIABLE(xTaskCreate(scheduler_task_function, "Scheduler", configMINIMAL_STACK_SIZE + 100, NULL, 5, &scheduler_task_handle));
-    //UNUSED_VARIABLE(xTaskCreate(battery_meas_task_function, "Battery", configMINIMAL_STACK_SIZE + 100, NULL, 4, &batt_meas_task_handle));
+    UNUSED_VARIABLE(xTaskCreate(vision_task_function, "VISION", configMINIMAL_STACK_SIZE + 200, NULL, 4, &vision_task_handle));
+    //UNUSED_VARIABLE(xTaskCreate(motion_update_task_function, "Motion", configMINIMAL_STACK_SIZE + 200, NULL, 3, &motion_task_handle));
+    UNUSED_VARIABLE(xTaskCreate(scheduler_task_function, "Scheduler", configMINIMAL_STACK_SIZE + 100, NULL, 3, &scheduler_task_handle));
+    UNUSED_VARIABLE(xTaskCreate(battery_meas_task_function, "Battery", configMINIMAL_STACK_SIZE + 100, NULL, 2, &batt_meas_task_handle));
+    UNUSED_VARIABLE(xTaskCreate(zigbug_run_task_function, "Zigbug", configMINIMAL_STACK_SIZE + 200, NULL, 4, &zigbug_task_handle));
 
     /* Activate deep sleep mode */
     SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;

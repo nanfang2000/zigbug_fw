@@ -10,7 +10,7 @@
 #include "app_error.h"
 #include "vl53l0x_api.h"
 #include "vl6180x_api.h"
-#define LOCAL_DEBUG
+//#define LOCAL_DEBUG
 #include "debug.h"
 #include "FreeRTOS.h"
 #include "task.h"

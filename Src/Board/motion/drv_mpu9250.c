@@ -152,8 +152,8 @@ int drv_mpu9250_write(unsigned char slave_addr, unsigned char reg_addr, unsigned
     buffer[0] = reg_addr;
     memcpy(&buffer[1], p_data, length);
 
-    err_code = twi_open();
-    APP_ERROR_CHECK(err_code);
+    //err_code = twi_open();
+    //APP_ERROR_CHECK(err_code);
 
     err_code = nrf_drv_twi_tx( m_mpu9250.init.p_twi_instance,
                                slave_addr,
@@ -165,8 +165,8 @@ int drv_mpu9250_write(unsigned char slave_addr, unsigned char reg_addr, unsigned
         DEBUG_PRINTF(0, RTT_CTRL_TEXT_BRIGHT_RED"drv_mpu9250_write"RTT_CTRL_RESET": Failed!\r\n");
     }
 
-    err_code = twi_close();
-    APP_ERROR_CHECK(err_code);
+    //err_code = twi_close();
+    //APP_ERROR_CHECK(err_code);
 
     return 0;
 }
@@ -176,8 +176,8 @@ int drv_mpu9250_read(unsigned char slave_addr, unsigned char reg_addr, unsigned 
 {
     uint32_t err_code;
 
-    err_code = twi_open();
-    APP_ERROR_CHECK(err_code);
+    //err_code = twi_open();
+    //APP_ERROR_CHECK(err_code);
 
     err_code = nrf_drv_twi_tx( m_mpu9250.init.p_twi_instance,
                                slave_addr,
@@ -198,8 +198,8 @@ int drv_mpu9250_read(unsigned char slave_addr, unsigned char reg_addr, unsigned 
         DEBUG_PRINTF(0, RTT_CTRL_TEXT_BRIGHT_RED"drv_mpu9250_read"RTT_CTRL_RESET": Failed!\r\n");
     }
 
-    err_code = twi_close();
-    APP_ERROR_CHECK(err_code);
+    //err_code = twi_close();
+    //APP_ERROR_CHECK(err_code);
 
     return 0;
 }
