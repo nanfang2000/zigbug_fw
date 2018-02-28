@@ -278,12 +278,29 @@ static void motion_update_task_function(void *pvParameter)
         vTaskDelay(5);
     }
 }
+float dist_to_force(float dist)
+{
+    float force;
+    if (dist == 0)
+    {
+        force = 0;
+    }
+    else if (dist > 100)
+    {
+        force = 0;
+    }
+    else
+    {
+        force = 100 - dist;
+    }
+    return force;
+}
 #define TEST_NO1  1
 static void zigbug_run_task_function(void *pvParameter)
 {
     UNUSED_PARAMETER(pvParameter);
     float target_angle;
-    pid_t pid,pid_barrier_right, pid_barrier_left;
+    pid_t pid,pid_barrier_right, pid_barrier_left, pid_front, pid_back;
 
     while (true)
     {
@@ -294,67 +311,54 @@ static void zigbug_run_task_function(void *pvParameter)
                                                                     (int32_t)(cur_degree), (int32_t)(next_motor));
         motor_start((int16_t)next_motor, -(int16_t)next_motor);
         #elif (TEST_NO1 == 1)
-        float barrier_force_left = abs(vision.dist_left_side);
-        float barrier_force_right = abs(vision.dist_right_side);
-        if(vision.dist_right_side == 0)
+        float barrier_force_left = dist_to_force(vision.dist_left_side);
+        float barrier_force_right = dist_to_force(vision.dist_right_side);
+        float barrier_force_front = dist_to_force(vision.dist_front);
+        float barrier_force_back = dist_to_force(vision.dist_back);
+
+        if (barrier_force_left == 0 && barrier_force_right == 0 && barrier_force_front == 0 && barrier_force_back == 0)
         {
-            barrier_force_right = 0;
-        }
-        else if(vision.dist_right_side > 100)
-        {
-            barrier_force_right = 0;
-        }
-        else
-        {
-            barrier_force_right = 100 - vision.dist_right_side;
-        }
-        if(vision.dist_left_side == 0)
-        {
-            barrier_force_left = 0;
-        }
-        else if(vision.dist_left_side > 100)
-        {
-            barrier_force_left = 0;
+            target_angle = motion_get_data()->euler.yaw * 10;
+            pid_init(&pid, 0.3, 0.000, 1.0);
+            pid_init(&pid_barrier_left, 0.2, 0.000, 0.0);
+            pid_init(&pid_barrier_right, 0.2, 0.000, 0.0);
+            pid_init(&pid_front, 0.6, 0.01, 0.0);
+            pid_init(&pid_back, 0.6, 0.01, 0.0);
+            motor_start(0, 0);
         }
         else
         {
-            barrier_force_left = 100 - vision.dist_left_side;
+            int32_t speed = 0;
+            if (barrier_force_left > 0)
+            {
+                target_angle += 90;
+                speed += SPEED;
+            }
+            else if (barrier_force_right > 0)
+            {
+                target_angle -= 90;
+                speed += SPEED;
+            }
+            for (int32_t i = 0; i < 50; i++)
+            {
+                float cur_degree = motion_get_data()->euler.yaw * 10;
+                float next_motor1 = pid_process(&pid, target_angle, cur_degree);
+                float next_motor2 = pid_process(&pid_barrier_right, 0, barrier_force_right);
+                float next_motor3 = -pid_process(&pid_barrier_left, 0, barrier_force_left);
+                float next_motor4 = pid_process(&pid_front, 0, barrier_force_front);
+                float next_motor5 = -pid_process(&pid_back, 0, barrier_force_back);
+                motor_start(speed + (int16_t)(next_motor1 + next_motor2 + next_motor3 + next_motor4 + next_motor5),
+                            speed - (int16_t)(next_motor1 + next_motor2 + next_motor3 - next_motor4 - next_motor5));
+                vTaskDelay(5);
+            }
+            //          float next_motor = pid_process(&pid_barrier, 0, barrier_force);
+            //          motor_start(SPEED+(int16_t)next_motor, SPEED-(int16_t)next_motor);
         }
-        if(barrier_force_left == 0 && barrier_force_right == 0)
-        {
-          target_angle = motion_get_data()->euler.yaw*10;
-          pid_init(&pid, 0.3, 0.000, 1.0);
-          pid_init(&pid_barrier_left, 0.2, 0.000, 0.0);
-          pid_init(&pid_barrier_right, 0.2, 0.000, 0.0);
-          motor_start(0, 0);
-        }
-        else
-        {
-          if(barrier_force_left > 0)
-          {
-            target_angle += 90;
-          }
-          else if (barrier_force_right > 0)
-          {
-            target_angle -= 90;
-          }
-          for(int32_t i = 0; i < 50; i++)
-          {
-            float cur_degree = motion_get_data()->euler.yaw*10;
-            float next_motor1 = pid_process(&pid, target_angle, cur_degree);
-            float next_motor2 = pid_process(&pid_barrier_right, 0, barrier_force_right);
-            float next_motor3 = -pid_process(&pid_barrier_left, 0, barrier_force_left);
-            motor_start(SPEED+(int16_t)(next_motor1+next_motor2+next_motor3), SPEED-(int16_t)(next_motor1+next_motor2+next_motor3));
-            vTaskDelay(5);
-          }
-//          float next_motor = pid_process(&pid_barrier, 0, barrier_force);
-//          motor_start(SPEED+(int16_t)next_motor, SPEED-(int16_t)next_motor);
-        }
-        #else
-        float cur_degree = motion_get_data()->euler.yaw*10;
+#else
+        float cur_degree = motion_get_data()->euler.yaw * 10;
         float next_motor = pid_process(&pid, 0, cur_degree);
-        motor_start(SPEED+(int16_t)next_motor, SPEED-(int16_t)next_motor);
-        #endif
+        motor_start(SPEED + (int16_t)next_motor, SPEED - (int16_t)next_motor);
+#endif
         vTaskDelay(20);
     }
 }
@@ -414,8 +418,8 @@ int main(void)
 
     UNUSED_VARIABLE(xTaskCreate(vision_task_function, "VISION", configMINIMAL_STACK_SIZE + 200, NULL, 4, &vision_task_handle));
     //UNUSED_VARIABLE(xTaskCreate(motion_update_task_function, "Motion", configMINIMAL_STACK_SIZE + 200, NULL, 3, &motion_task_handle));
-    UNUSED_VARIABLE(xTaskCreate(scheduler_task_function, "Scheduler", configMINIMAL_STACK_SIZE + 100, NULL, 3, &scheduler_task_handle));
-    UNUSED_VARIABLE(xTaskCreate(battery_meas_task_function, "Battery", configMINIMAL_STACK_SIZE + 100, NULL, 2, &batt_meas_task_handle));
+    //UNUSED_VARIABLE(xTaskCreate(scheduler_task_function, "Scheduler", configMINIMAL_STACK_SIZE + 100, NULL, 3, &scheduler_task_handle));
+    //UNUSED_VARIABLE(xTaskCreate(battery_meas_task_function, "Battery", configMINIMAL_STACK_SIZE + 100, NULL, 2, &batt_meas_task_handle));
     UNUSED_VARIABLE(xTaskCreate(zigbug_run_task_function, "Zigbug", configMINIMAL_STACK_SIZE + 200, NULL, 4, &zigbug_task_handle));
 
     /* Activate deep sleep mode */
