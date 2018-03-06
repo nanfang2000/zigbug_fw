@@ -93,7 +93,7 @@ static const nrf_drv_spi_t neopixels_spi_instance = NRF_DRV_SPI_INSTANCE(0);
 #include "wav_1.h"
 static uint16_t listen_buffer[26000];
 
-#define SPEED 20
+#define SPEED 15
 
 uint32_t error_code;
 void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
@@ -295,22 +295,22 @@ float dist_to_force(float dist)
     }
     return force;
 }
-#define TEST_NO1  1
+#define TEST_NO1  3
 static void zigbug_run_task_function(void *pvParameter)
 {
     UNUSED_PARAMETER(pvParameter);
-    float target_angle;
+    float target_angle = 0;
     pid_t pid,pid_barrier_right, pid_barrier_left, pid_front, pid_back;
 
     while (true)
     {
-        #if (TEST_NO1 == 0)
+#if (TEST_NO1 == 0)
         float cur_degree = motion_get_data()->euler.yaw*10;
         float next_motor = pid_process(&pid, 90.f, cur_degree);
         DEBUG_PRINTF(0, "motion:%dms, yaw=%d, next_pwm=%d\r\n", (int32_t)(motion_raw.timestamp*1000),
                                                                     (int32_t)(cur_degree), (int32_t)(next_motor));
         motor_start((int16_t)next_motor, -(int16_t)next_motor);
-        #elif (TEST_NO1 == 1)
+#elif (TEST_NO1 == 1)
         float barrier_force_left = dist_to_force(vision.dist_left_side);
         float barrier_force_right = dist_to_force(vision.dist_right_side);
         float barrier_force_front = dist_to_force(vision.dist_front);
@@ -354,10 +354,34 @@ static void zigbug_run_task_function(void *pvParameter)
             //          float next_motor = pid_process(&pid_barrier, 0, barrier_force);
             //          motor_start(SPEED+(int16_t)next_motor, SPEED-(int16_t)next_motor);
         }
-#else
+#elif (TEST_NO1 == 2)
         float cur_degree = motion_get_data()->euler.yaw * 10;
         float next_motor = pid_process(&pid, 0, cur_degree);
         motor_start(SPEED + (int16_t)next_motor, SPEED - (int16_t)next_motor);
+#else
+        if(vision.dist_left_eye > 150 || vision.dist_right_eye > 150)
+        {
+            motor_start(-20, -20);
+            vTaskDelay(500);
+            pid_init(&pid, 0.6, 0.005, 5.0);
+            for (int32_t i = 0; i < 50; i++)
+            {
+                float cur_degree = motion_get_data()->euler.yaw * 10;
+                float next_motor1 = pid_process(&pid, 180, cur_degree);
+
+                motor_start(+ (int16_t)(next_motor1),
+                            - (int16_t)(next_motor1));
+                vTaskDelay(5);
+            }
+            target_angle = motion_get_data()->euler.yaw * 10;
+        }
+        else
+        {
+            float cur_degree = motion_get_data()->euler.yaw * 10;
+            float next_motor = pid_process(&pid, target_angle, cur_degree);
+            motor_start(SPEED + (int16_t)next_motor, SPEED - (int16_t)next_motor);
+        }
+        DEBUG_PRINTF(0, "LEFT_EYE:%d\n", vision.dist_left_eye);
 #endif
         vTaskDelay(20);
     }
