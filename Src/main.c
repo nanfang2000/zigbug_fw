@@ -179,6 +179,7 @@ void enable_breath_led(uint32_t meas_interval_ms)
 }
 vision_t vision;
 motion_raw_t motion_raw;
+volatile bool motion_init_done = false;
 //#include <string.h>
 /**@brief LED0 task entry function.
  *
@@ -189,6 +190,7 @@ static void vision_task_function(void *pvParameter)
     UNUSED_PARAMETER(pvParameter);
     vision_init();
     motion_init();
+    motion_init_done = true;
     memset(&vision, 0, sizeof(vision));
     while (true)
     {
@@ -223,6 +225,7 @@ static void motion_update_task_function(void *pvParameter)
     motion_init();
     pid_init(&pid, 0.6, 0.005, 5.5);
     vTaskDelay(20);
+
     //pid_init(&pid_barrier, 0.6, 0.005, 0.5);
     while (true)
     {
@@ -301,9 +304,14 @@ static void zigbug_run_task_function(void *pvParameter)
     UNUSED_PARAMETER(pvParameter);
     float target_angle = 0;
     pid_t pid,pid_barrier_right, pid_barrier_left, pid_front, pid_back;
-
+    pid_init(&pid, 0.5, 0.01, 1.0);
     while (true)
     {
+        if(!motion_init_done)
+        {
+            vTaskDelay(20);
+            continue;
+        }
 #if (TEST_NO1 == 0)
         float cur_degree = motion_get_data()->euler.yaw*10;
         float next_motor = pid_process(&pid, 90.f, cur_degree);
@@ -357,17 +365,21 @@ static void zigbug_run_task_function(void *pvParameter)
 #elif (TEST_NO1 == 2)
         float cur_degree = motion_get_data()->euler.yaw * 10;
         float next_motor = pid_process(&pid, 0, cur_degree);
+        DEBUG_PRINTF(0, "deg:%d\n", (int32_t)cur_degree);
         motor_start(SPEED + (int16_t)next_motor, SPEED - (int16_t)next_motor);
 #else
-        if(vision.dist_left_eye > 150 || vision.dist_right_eye > 150)
+        if(vision.dist_left_eye > 190 || vision.dist_right_eye > 190)
         {
+            pid_t pid_turn;
             motor_start(-20, -20);
+            vTaskDelay(50);
+            motor_start(0, 0);
             vTaskDelay(500);
-            pid_init(&pid, 0.6, 0.005, 5.0);
+            pid_init(&pid_turn, 0.3, 0.005, 4.0);
             for (int32_t i = 0; i < 50; i++)
             {
                 float cur_degree = motion_get_data()->euler.yaw * 10;
-                float next_motor1 = pid_process(&pid, 180, cur_degree);
+                float next_motor1 = pid_process(&pid_turn, target_angle+180, cur_degree);
 
                 motor_start(+ (int16_t)(next_motor1),
                             - (int16_t)(next_motor1));
