@@ -19,6 +19,9 @@
 #define CONFIG_MOTOR_RIGHT_PWM			(TC214B_RIGHT_IA)
 #define CONFIG_MOTOR_RIGHT_DIR			(TC214B_RIGHT_IB)
 
+#define MOTOR_PWM_FREQ  (100) // Hz max 10khz
+#define PWM_FREQ_SCALE  (1000000/100/MOTOR_PWM_FREQ) //PWM CLK = 1Mhz
+
 static const nrf_drv_pwm_t m_pwm_motor_instance = NRF_DRV_PWM_INSTANCE(0);
 nrf_pwm_values_individual_t m_pwm_seq_values[] = {0, 0, 0, 0};
 nrf_pwm_sequence_t const m_pwm_seq =
@@ -38,7 +41,7 @@ nrf_drv_pwm_config_t m_pwm_motor_config =
     .irq_priority = PWM_DEFAULT_CONFIG_IRQ_PRIORITY,                          
     .base_clock   = NRF_PWM_CLK_1MHz,             
     .count_mode   = NRF_PWM_MODE_UP,            
-    .top_value    = 100,                             
+    .top_value    = 100*PWM_FREQ_SCALE,                             
     .load_mode    = NRF_PWM_LOAD_INDIVIDUAL,         
     .step_mode    = NRF_PWM_STEP_AUTO,         
 };
@@ -70,7 +73,7 @@ static void motor_pwm_update_duty_cycle(uint16_t duty_cycle0, uint16_t duty_cycl
     }
     else
     {
-        m_pwm_seq_values->channel_0 = (100 - duty_cycle0)*1;
+        m_pwm_seq_values->channel_0 = (100 - duty_cycle0)*PWM_FREQ_SCALE;
     }
 
     if(duty_cycle1 >= 100)
@@ -79,7 +82,7 @@ static void motor_pwm_update_duty_cycle(uint16_t duty_cycle0, uint16_t duty_cycl
     }
     else
     {
-        m_pwm_seq_values->channel_1 = (100 - duty_cycle1)*1;
+        m_pwm_seq_values->channel_1 = (100 - duty_cycle1)*PWM_FREQ_SCALE;
     }
     
     nrf_drv_pwm_simple_playback(&m_pwm_motor_instance, &m_pwm_seq, 1, NRF_DRV_PWM_FLAG_LOOP);

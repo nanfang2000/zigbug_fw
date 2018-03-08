@@ -93,7 +93,7 @@ static const nrf_drv_spi_t neopixels_spi_instance = NRF_DRV_SPI_INSTANCE(0);
 #include "wav_1.h"
 static uint16_t listen_buffer[26000];
 
-#define SPEED 15
+#define SPEED 20
 
 uint32_t error_code;
 void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
@@ -368,15 +368,20 @@ static void zigbug_run_task_function(void *pvParameter)
         DEBUG_PRINTF(0, "deg:%d\n", (int32_t)cur_degree);
         motor_start(SPEED + (int16_t)next_motor, SPEED - (int16_t)next_motor);
 #else
-        if(vision.dist_left_eye > 190 || vision.dist_right_eye > 190)
+        if(vision.dist_left_eye > 150 || vision.dist_right_eye > 150)
         {
             pid_t pid_turn;
-            motor_start(-20, -20);
-            vTaskDelay(50);
+
+            motor_start(-SPEED, -SPEED);
+            while(vision.dist_left_eye > 190 || vision.dist_right_eye > 190)
+            {
+                vTaskDelay(30);
+            }
+            
             motor_start(0, 0);
             vTaskDelay(500);
-            pid_init(&pid_turn, 0.3, 0.005, 4.0);
-            for (int32_t i = 0; i < 50; i++)
+            pid_init(&pid_turn, 0.5, 0.01, 5.0);
+            for (int32_t i = 0; i < 100; i++)
             {
                 float cur_degree = motion_get_data()->euler.yaw * 10;
                 float next_motor1 = pid_process(&pid_turn, target_angle+180, cur_degree);
