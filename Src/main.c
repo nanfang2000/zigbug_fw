@@ -93,7 +93,7 @@ static const nrf_drv_spi_t neopixels_spi_instance = NRF_DRV_SPI_INSTANCE(0);
 #include "wav_1.h"
 static uint16_t listen_buffer[26000];
 
-#define SPEED 20
+#define SPEED 10
 
 uint32_t error_code;
 void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
@@ -372,22 +372,56 @@ static void zigbug_run_task_function(void *pvParameter)
         {
             pid_t pid_turn;
 
-            motor_start(-SPEED, -SPEED);
-            while(vision.dist_left_eye > 190 || vision.dist_right_eye > 190)
-            {
-                vTaskDelay(30);
-            }
+            // motor_start(-SPEED, -SPEED);
+            // while(vision.dist_left_eye > 190 || vision.dist_right_eye > 190)
+            // {
+            //     vTaskDelay(30);
+            // }
             
+            /* Wait for zigbug to stop, checking ACC */
             motor_start(0, 0);
-            vTaskDelay(500);
-            pid_init(&pid_turn, 0.5, 0.01, 5.0);
+            int32_t static_cnt = 0;
             for (int32_t i = 0; i < 100; i++)
             {
+                vector3_t norm_acc = motion_get_data()->normAcc;
+                if (abs(norm_acc.x) + abs(norm_acc.y) < 0.1)
+                {
+                    static_cnt++;
+                    if (static_cnt > 10)
+                    {
+                        break;
+                    }
+                }
+                vTaskDelay(10);
+            }
+            vTaskDelay(500);
+            /* Wait for zigbug to rotate, checking degree */
+            target_angle += 90;
+            int32_t degree_cnt = 0;
+            pid_init(&pid_turn, 0.5, 0.005, 7.0);
+            for (int32_t i = 0; i < 200; i++)
+            {
                 float cur_degree = motion_get_data()->euler.yaw * 10;
-                float next_motor1 = pid_process(&pid_turn, target_angle+180, cur_degree);
+                float next_motor1 = pid_process(&pid_turn, target_angle, cur_degree);
 
+                if(next_motor1 > 30)
+                {
+                    next_motor1 = 30;
+                }
+                else if(next_motor1 < -30)
+                {
+                    next_motor1 = -30;
+                }
                 motor_start(+ (int16_t)(next_motor1),
                             - (int16_t)(next_motor1));
+                if (abs(target_angle - cur_degree) < 5)
+                {
+                    degree_cnt++;
+                    if (degree_cnt > 3)
+                    {
+                        break;
+                    }
+                }
                 vTaskDelay(5);
             }
             target_angle = motion_get_data()->euler.yaw * 10;

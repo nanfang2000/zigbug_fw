@@ -19,7 +19,7 @@
 #define CONFIG_MOTOR_RIGHT_PWM			(TC214B_RIGHT_IA)
 #define CONFIG_MOTOR_RIGHT_DIR			(TC214B_RIGHT_IB)
 
-#define MOTOR_PWM_FREQ  (100) // Hz max 10khz
+#define MOTOR_PWM_FREQ  (10000) // Hz max 10khz
 #define PWM_FREQ_SCALE  (1000000/100/MOTOR_PWM_FREQ) //PWM CLK = 1Mhz
 
 static const nrf_drv_pwm_t m_pwm_motor_instance = NRF_DRV_PWM_INSTANCE(0);
