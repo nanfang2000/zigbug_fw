@@ -27,6 +27,14 @@ float pid_process(pid_t *pid, float target_value, float cur_value)
     pid->ek1 = pid->ek;  //储存前一次的误差值
 
     pid->u = pid->Kp * pError + pid->Ki * iError + pid->Kd * dError + pid->u1; //获取PID调节的误差值
+    // if (pid->u > 100)
+    // {
+    //     pid->u = 100;
+    // }
+    // else if (pid->u < -100)
+    // {
+    //     pid->u = -100;
+    // }
     pid->u1 = pid->u;  
     return pid->u;                                                        //储存前一次的输出值
 }

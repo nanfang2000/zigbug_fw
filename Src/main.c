@@ -69,7 +69,7 @@
 #include "motion.h"
 #include "pid.h"
 
-#define LOCAL_DEBUG
+// #define LOCAL_DEBUG
 #include "debug.h"
 
 #define DEAD_BEEF   0xDEADBEEF          /**< Value used as error code on stack dump, can be used to identify stack location on stack unwind. */
@@ -298,6 +298,126 @@ float dist_to_force(float dist)
     }
     return force;
 }
+
+void run_with_barrier_detect(float target_angle, pid_t *pid, pid_t *pid_barrier_left, pid_t *pid_barrier_right, pid_t *pid_front, pid_t *pid_back)
+{
+    float barrier_force_left = dist_to_force(vision.dist_left_side);
+    float barrier_force_right = dist_to_force(vision.dist_right_side);
+    float barrier_force_front = dist_to_force(vision.dist_front);
+    float barrier_force_back = dist_to_force(vision.dist_back);
+
+    if (barrier_force_left == 0 && barrier_force_right == 0 && barrier_force_front == 0 && barrier_force_back == 0)
+    {
+        target_angle = motion_get_data()->euler.yaw * 10;
+        pid_init(pid, 0.3, 0.001, 1.0);
+        pid_init(pid_barrier_left, 0.2, 0.005, 7.0);
+        pid_init(pid_barrier_right, 0.2, 0.005, 7.0);
+        pid_init(pid_front, 0.5, 0.01, 7.0);
+        pid_init(pid_back, 0.5, 0.01, 7.0);
+        motor_start(0, 0);
+    }
+    else
+    {
+        int32_t speed = 20;
+        float cur_degree = motion_get_data()->euler.yaw * 10;
+        target_angle = cur_degree;
+        if (barrier_force_left > 0)
+        {
+            target_angle += 50;
+            speed += SPEED;
+        }
+        else if (barrier_force_right > 0)
+        {
+            target_angle -= 50;
+            speed += SPEED;
+        }
+        if (barrier_force_front > 0)
+        {
+            target_angle += 50;
+            speed += SPEED;
+        }
+        else if (barrier_force_back > 0)
+        {
+            speed += SPEED;
+        }
+        for (int32_t i = 0; i < 50; i++)
+        {
+            cur_degree = motion_get_data()->euler.yaw * 10;
+            float next_motor1 = pid_process(pid, target_angle, cur_degree);
+            float next_motor2 = 0;//pid_process(pid_barrier_right, 0, barrier_force_right);
+            float next_motor3 = 0;//-pid_process(pid_barrier_left, 0, barrier_force_left);
+            float next_motor4 = 0;//pid_process(pid_front, 0, barrier_force_front);
+            float next_motor5 = 0;//-pid_process(pid_back, 0, barrier_force_back);
+            motor_start(speed + (int16_t)(next_motor1 + next_motor2 + next_motor3 + next_motor4 + next_motor5),
+                        speed - (int16_t)(next_motor1 + next_motor2 + next_motor3 - next_motor4 - next_motor5));
+            vTaskDelay(5);
+        }
+    }
+}
+
+void run_with_fixed_orientation(pid_t *pid, float target_angle)
+{
+    float cur_degree = motion_get_data()->euler.yaw * 10;
+    float next_motor = pid_process(pid, target_angle, cur_degree);
+    // DEBUG_PRINTF(0, "deg:%d\n", (int32_t)cur_degree);
+    motor_start(SPEED + (int16_t)next_motor, SPEED - (int16_t)next_motor);
+}
+
+void zigbug_stop(void)
+{
+    /* Wait for zigbug to stop, checking ACC */
+    motor_start(0, 0);
+    int32_t static_cnt = 0;
+    for (int32_t i = 0; i < 100; i++)
+    {
+        vector3_t norm_acc = motion_get_data()->normAcc;
+        if (abs(norm_acc.x) + abs(norm_acc.y) < 0.1)
+        {
+            static_cnt++;
+            if (static_cnt > 10)
+            {
+                break;
+            }
+        }
+        vTaskDelay(10);
+    }
+}
+
+void zigbug_rotate(float degree)
+{
+    pid_t pid_turn;
+
+    int32_t degree_cnt = 0;
+    float target_angle = motion_get_data()->euler.yaw * 10;
+    target_angle += degree;
+    pid_init(&pid_turn, 0.5, 0.005, 7.0);
+    for (int32_t i = 0; i < 200; i++)
+    {
+        float cur_degree = motion_get_data()->euler.yaw * 10;
+        float next_motor1 = pid_process(&pid_turn, target_angle, cur_degree);
+
+        if(next_motor1 > 30)
+        {
+            next_motor1 = 30;
+        }
+        else if(next_motor1 < -30)
+        {
+            next_motor1 = -30;
+        }
+        motor_start(+ (int16_t)(next_motor1),
+                    - (int16_t)(next_motor1));
+        if (abs(target_angle - cur_degree) < 5)
+        {
+            degree_cnt++;
+            if (degree_cnt > 3)
+            {
+                break;
+            }
+        }
+        vTaskDelay(5);
+    }
+}
+
 #define TEST_NO1  3
 static void zigbug_run_task_function(void *pvParameter)
 {
@@ -319,120 +439,35 @@ static void zigbug_run_task_function(void *pvParameter)
                                                                     (int32_t)(cur_degree), (int32_t)(next_motor));
         motor_start((int16_t)next_motor, -(int16_t)next_motor);
 #elif (TEST_NO1 == 1)
-        float barrier_force_left = dist_to_force(vision.dist_left_side);
-        float barrier_force_right = dist_to_force(vision.dist_right_side);
-        float barrier_force_front = dist_to_force(vision.dist_front);
-        float barrier_force_back = dist_to_force(vision.dist_back);
-
-        if (barrier_force_left == 0 && barrier_force_right == 0 && barrier_force_front == 0 && barrier_force_back == 0)
-        {
-            target_angle = motion_get_data()->euler.yaw * 10;
-            pid_init(&pid, 0.3, 0.000, 1.0);
-            pid_init(&pid_barrier_left, 0.2, 0.000, 0.0);
-            pid_init(&pid_barrier_right, 0.2, 0.000, 0.0);
-            pid_init(&pid_front, 0.6, 0.01, 0.0);
-            pid_init(&pid_back, 0.6, 0.01, 0.0);
-            motor_start(0, 0);
-        }
-        else
-        {
-            int32_t speed = 0;
-            if (barrier_force_left > 0)
-            {
-                target_angle += 90;
-                speed += SPEED;
-            }
-            else if (barrier_force_right > 0)
-            {
-                target_angle -= 90;
-                speed += SPEED;
-            }
-            for (int32_t i = 0; i < 50; i++)
-            {
-                float cur_degree = motion_get_data()->euler.yaw * 10;
-                float next_motor1 = pid_process(&pid, target_angle, cur_degree);
-                float next_motor2 = pid_process(&pid_barrier_right, 0, barrier_force_right);
-                float next_motor3 = -pid_process(&pid_barrier_left, 0, barrier_force_left);
-                float next_motor4 = pid_process(&pid_front, 0, barrier_force_front);
-                float next_motor5 = -pid_process(&pid_back, 0, barrier_force_back);
-                motor_start(speed + (int16_t)(next_motor1 + next_motor2 + next_motor3 + next_motor4 + next_motor5),
-                            speed - (int16_t)(next_motor1 + next_motor2 + next_motor3 - next_motor4 - next_motor5));
-                vTaskDelay(5);
-            }
-            //          float next_motor = pid_process(&pid_barrier, 0, barrier_force);
-            //          motor_start(SPEED+(int16_t)next_motor, SPEED-(int16_t)next_motor);
-        }
+        run_with_barrier_detect(target_angle, &pid, &pid_barrier_left, &pid_barrier_right, &pid_front, &pid_back);
 #elif (TEST_NO1 == 2)
-        float cur_degree = motion_get_data()->euler.yaw * 10;
-        float next_motor = pid_process(&pid, 0, cur_degree);
-        DEBUG_PRINTF(0, "deg:%d\n", (int32_t)cur_degree);
-        motor_start(SPEED + (int16_t)next_motor, SPEED - (int16_t)next_motor);
+        run_with_fixed_orientation(&pid, target_angle);
 #else
         if(vision.dist_left_eye > 150 || vision.dist_right_eye > 150)
         {
-            pid_t pid_turn;
-
-            // motor_start(-SPEED, -SPEED);
-            // while(vision.dist_left_eye > 190 || vision.dist_right_eye > 190)
-            // {
-            //     vTaskDelay(30);
-            // }
             
-            /* Wait for zigbug to stop, checking ACC */
-            motor_start(0, 0);
-            int32_t static_cnt = 0;
-            for (int32_t i = 0; i < 100; i++)
-            {
-                vector3_t norm_acc = motion_get_data()->normAcc;
-                if (abs(norm_acc.x) + abs(norm_acc.y) < 0.1)
-                {
-                    static_cnt++;
-                    if (static_cnt > 10)
-                    {
-                        break;
-                    }
-                }
-                vTaskDelay(10);
-            }
+            /* Wait for zigbug to stop */
+            zigbug_stop();
             vTaskDelay(500);
             /* Wait for zigbug to rotate, checking degree */
-            target_angle += 90;
-            int32_t degree_cnt = 0;
-            pid_init(&pid_turn, 0.5, 0.005, 7.0);
-            for (int32_t i = 0; i < 200; i++)
-            {
-                float cur_degree = motion_get_data()->euler.yaw * 10;
-                float next_motor1 = pid_process(&pid_turn, target_angle, cur_degree);
-
-                if(next_motor1 > 30)
-                {
-                    next_motor1 = 30;
-                }
-                else if(next_motor1 < -30)
-                {
-                    next_motor1 = -30;
-                }
-                motor_start(+ (int16_t)(next_motor1),
-                            - (int16_t)(next_motor1));
-                if (abs(target_angle - cur_degree) < 5)
-                {
-                    degree_cnt++;
-                    if (degree_cnt > 3)
-                    {
-                        break;
-                    }
-                }
-                vTaskDelay(5);
-            }
-            target_angle = motion_get_data()->euler.yaw * 10;
+            zigbug_rotate(90);
+            target_angle = motion_get_data()->euler.yaw*10;
         }
         else
         {
-            float cur_degree = motion_get_data()->euler.yaw * 10;
-            float next_motor = pid_process(&pid, target_angle, cur_degree);
-            motor_start(SPEED + (int16_t)next_motor, SPEED - (int16_t)next_motor);
+            run_with_fixed_orientation(&pid, target_angle);
+            // run_with_barrier_detect(target_angle, &pid, &pid_barrier_left, &pid_barrier_right, &pid_front, &pid_back);
+        //    motor_start(SPEED, SPEED);
+        //    DEBUG_PRINTF(0, "deg:%d\n", (int32_t)vision.dist_front);
+        //    if (vision.dist_front < 200)
+        //    {
+        //        zigbug_stop();
+        //        vTaskDelay(500);
+        //        zigbug_rotate(60);
+        //        motor_start(SPEED, SPEED);
+        //    }
         }
-        DEBUG_PRINTF(0, "LEFT_EYE:%d\n", vision.dist_left_eye);
+        // DEBUG_PRINTF(0, "LEFT_EYE:%d\n", vision.dist_left_eye);
 #endif
         vTaskDelay(20);
     }
