@@ -93,7 +93,7 @@ static const nrf_drv_spi_t neopixels_spi_instance = NRF_DRV_SPI_INSTANCE(0);
 #include "wav_1.h"
 static uint16_t listen_buffer[26000];
 
-#define SPEED 10
+#define SPEED 15
 
 uint32_t error_code;
 void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
@@ -129,7 +129,7 @@ TaskHandle_t  batt_meas_task_handle;   /**< Reference to LED0 toggling FreeRTOS 
 TaskHandle_t  zigbug_task_handle;   /**< Reference to LED0 toggling FreeRTOS task. */
 TaskHandle_t  scheduler_task_handle;   /**< Reference to LED0 toggling FreeRTOS task. */
 TimerHandle_t led_toggle_timer_handle;  /**< Reference to LED1 toggling FreeRTOS timer. */
-
+TaskHandle_t motor_pfm_task_handle;  /**< Reference to LED1 toggling FreeRTOS timer. */
 /**@brief LED0 task entry function.
  *
  * @param[in] pvParameter   Pointer that will be used as the parameter for the task.
@@ -492,7 +492,43 @@ static void scheduler_task_function(void *pvParameter)
         vTaskDelay(100);
     }
 }
-
+#define MaxPFM 50
+#define CONFIG_MOTOR_LEFT_PWM			(29)
+#define CONFIG_MOTOR_LEFT_DIR			(27)
+#define CONFIG_MOTOR_RIGHT_PWM			(25)
+#define CONFIG_MOTOR_RIGHT_DIR			(00)
+int g_pfm = 5;
+void DoPfm(int pp)
+{
+    static pfmCnt = 0;
+    pfmCnt += pp;
+    if (pfmCnt > MaxPFM)
+    {
+        pfmCnt -= MaxPFM;
+        nrf_drv_gpiote_out_set(CONFIG_MOTOR_LEFT_PWM);
+        nrf_drv_gpiote_out_set(CONFIG_MOTOR_RIGHT_PWM);
+    }
+    else
+    {
+        nrf_drv_gpiote_out_clear(CONFIG_MOTOR_LEFT_PWM);
+        nrf_drv_gpiote_out_clear(CONFIG_MOTOR_RIGHT_PWM);
+    }
+}
+static void pfm_task_function(void *pvParameter)
+{
+    UNUSED_PARAMETER(pvParameter);
+    nrf_drv_gpiote_out_config_t motor_left_dir_pin_config = GPIOTE_CONFIG_OUT_SIMPLE(false);
+    nrf_drv_gpiote_out_config_t motor_right_dir_pin_config = GPIOTE_CONFIG_OUT_SIMPLE(false);
+    APP_ERROR_CHECK(nrf_drv_gpiote_out_init(CONFIG_MOTOR_LEFT_DIR, &motor_left_dir_pin_config));
+    APP_ERROR_CHECK(nrf_drv_gpiote_out_init(CONFIG_MOTOR_LEFT_PWM, &motor_left_dir_pin_config));
+    APP_ERROR_CHECK(nrf_drv_gpiote_out_init(CONFIG_MOTOR_RIGHT_DIR, &motor_left_dir_pin_config));
+    APP_ERROR_CHECK(nrf_drv_gpiote_out_init(CONFIG_MOTOR_RIGHT_PWM, &motor_left_dir_pin_config));
+    while (true)
+    {
+        DoPfm(g_pfm);
+        vTaskDelay(1);
+    }
+}
 /**
  * @brief Function for application main entry.
  */
@@ -526,12 +562,12 @@ int main(void)
     /* Create task for LED0 blinking with priority set to 2 */
     UNUSED_VARIABLE(xTaskCreate(led_toggle_task_function, "LED0", configMINIMAL_STACK_SIZE + 100, NULL, 1, &led_toggle_task_handle));
 
-    UNUSED_VARIABLE(xTaskCreate(vision_task_function, "VISION", configMINIMAL_STACK_SIZE + 200, NULL, 4, &vision_task_handle));
+    // UNUSED_VARIABLE(xTaskCreate(vision_task_function, "VISION", configMINIMAL_STACK_SIZE + 200, NULL, 4, &vision_task_handle));
     //UNUSED_VARIABLE(xTaskCreate(motion_update_task_function, "Motion", configMINIMAL_STACK_SIZE + 200, NULL, 3, &motion_task_handle));
     //UNUSED_VARIABLE(xTaskCreate(scheduler_task_function, "Scheduler", configMINIMAL_STACK_SIZE + 100, NULL, 3, &scheduler_task_handle));
     //UNUSED_VARIABLE(xTaskCreate(battery_meas_task_function, "Battery", configMINIMAL_STACK_SIZE + 100, NULL, 2, &batt_meas_task_handle));
-    UNUSED_VARIABLE(xTaskCreate(zigbug_run_task_function, "Zigbug", configMINIMAL_STACK_SIZE + 200, NULL, 4, &zigbug_task_handle));
-
+    // UNUSED_VARIABLE(xTaskCreate(zigbug_run_task_function, "Zigbug", configMINIMAL_STACK_SIZE + 200, NULL, 4, &zigbug_task_handle));
+    UNUSED_VARIABLE(xTaskCreate(pfm_task_function, "pfm", configMINIMAL_STACK_SIZE + 200, NULL, 4, &motor_pfm_task_handle));
     /* Activate deep sleep mode */
     SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
 
