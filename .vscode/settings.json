@@ -9,6 +9,7 @@
         "nrf_pwm.h": "c",
         "nrf_qspi.h": "c",
         "nrf_pdm.h": "c",
-        "sdk_config.h": "c"
+        "sdk_config.h": "c",
+        "nrf_drv_timer.h": "c"
     }
 }

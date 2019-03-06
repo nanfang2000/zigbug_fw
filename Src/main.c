@@ -61,6 +61,7 @@
 #include "app_scheduler.h"
 #include "nrf_drv_gpiote.h"
 #include "nrf_drv_clock.h"
+#include "nrf_drv_timer.h"
 #include "vision.h"
 
 #include "FreeRTOS.h"
@@ -93,7 +94,7 @@ static const nrf_drv_spi_t neopixels_spi_instance = NRF_DRV_SPI_INSTANCE(0);
 #include "wav_1.h"
 static uint16_t listen_buffer[26000];
 
-#define SPEED 15
+#define SPEED 20
 
 uint32_t error_code;
 void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
@@ -455,7 +456,27 @@ static void zigbug_run_task_function(void *pvParameter)
         }
         else
         {
-            run_with_fixed_orientation(&pid, target_angle);
+            if (vision.dist_front < 200)
+            {
+                /* Wait for zigbug to stop */
+                zigbug_stop();
+                vTaskDelay(500);
+                if(vision.dist_front < 200)
+                {
+                    /* Wait for zigbug to rotate, checking degree */
+                    zigbug_rotate(90);
+                    zigbug_stop();
+                    vTaskDelay(100);
+                    target_angle = motion_get_data()->euler.yaw*10;
+                }
+                run_with_fixed_orientation(&pid, target_angle);                    
+
+            }
+            else
+            {
+                run_with_fixed_orientation(&pid, target_angle);
+            }
+            
             // run_with_barrier_detect(target_angle, &pid, &pid_barrier_left, &pid_barrier_right, &pid_front, &pid_back);
         //    motor_start(SPEED, SPEED);
         //    DEBUG_PRINTF(0, "deg:%d\n", (int32_t)vision.dist_front);
@@ -492,43 +513,7 @@ static void scheduler_task_function(void *pvParameter)
         vTaskDelay(100);
     }
 }
-#define MaxPFM 50
-#define CONFIG_MOTOR_LEFT_PWM			(29)
-#define CONFIG_MOTOR_LEFT_DIR			(27)
-#define CONFIG_MOTOR_RIGHT_PWM			(25)
-#define CONFIG_MOTOR_RIGHT_DIR			(00)
-int g_pfm = 5;
-void DoPfm(int pp)
-{
-    static pfmCnt = 0;
-    pfmCnt += pp;
-    if (pfmCnt > MaxPFM)
-    {
-        pfmCnt -= MaxPFM;
-        nrf_drv_gpiote_out_set(CONFIG_MOTOR_LEFT_PWM);
-        nrf_drv_gpiote_out_set(CONFIG_MOTOR_RIGHT_PWM);
-    }
-    else
-    {
-        nrf_drv_gpiote_out_clear(CONFIG_MOTOR_LEFT_PWM);
-        nrf_drv_gpiote_out_clear(CONFIG_MOTOR_RIGHT_PWM);
-    }
-}
-static void pfm_task_function(void *pvParameter)
-{
-    UNUSED_PARAMETER(pvParameter);
-    nrf_drv_gpiote_out_config_t motor_left_dir_pin_config = GPIOTE_CONFIG_OUT_SIMPLE(false);
-    nrf_drv_gpiote_out_config_t motor_right_dir_pin_config = GPIOTE_CONFIG_OUT_SIMPLE(false);
-    APP_ERROR_CHECK(nrf_drv_gpiote_out_init(CONFIG_MOTOR_LEFT_DIR, &motor_left_dir_pin_config));
-    APP_ERROR_CHECK(nrf_drv_gpiote_out_init(CONFIG_MOTOR_LEFT_PWM, &motor_left_dir_pin_config));
-    APP_ERROR_CHECK(nrf_drv_gpiote_out_init(CONFIG_MOTOR_RIGHT_DIR, &motor_left_dir_pin_config));
-    APP_ERROR_CHECK(nrf_drv_gpiote_out_init(CONFIG_MOTOR_RIGHT_PWM, &motor_left_dir_pin_config));
-    while (true)
-    {
-        DoPfm(g_pfm);
-        vTaskDelay(1);
-    }
-}
+
 /**
  * @brief Function for application main entry.
  */
@@ -536,7 +521,7 @@ int main(void)
  {
     lfclk_config();
     APP_SCHED_INIT(SCHED_MAX_EVENT_DATA_SIZE, SCHED_QUEUE_SIZE);
-    //app_timer_init();
+    // app_timer_init();
     /* Configure board. */
     //bsp_board_leds_init();
     nrf_drv_gpiote_init();
@@ -544,7 +529,7 @@ int main(void)
     mic_init();
     //vision_init();
     motor_init();
-    //motor_start(10, 10);
+    motor_start(-10, 10);
     // while(1)
     // {
     // motor_start(100, 100);
@@ -557,17 +542,16 @@ int main(void)
     //batt_meas_enable(5000);
     //motor_start(-SPEED, -SPEED);
     neopixel_init(&m_body_leds, 1, &neopixels_spi_instance);
-    //enable_breath_led(1000);
+    // enable_breath_led(1000);
     /* Toggle LEDs. */
     /* Create task for LED0 blinking with priority set to 2 */
     UNUSED_VARIABLE(xTaskCreate(led_toggle_task_function, "LED0", configMINIMAL_STACK_SIZE + 100, NULL, 1, &led_toggle_task_handle));
 
-    // UNUSED_VARIABLE(xTaskCreate(vision_task_function, "VISION", configMINIMAL_STACK_SIZE + 200, NULL, 4, &vision_task_handle));
+    UNUSED_VARIABLE(xTaskCreate(vision_task_function, "VISION", configMINIMAL_STACK_SIZE + 200, NULL, 4, &vision_task_handle));
     //UNUSED_VARIABLE(xTaskCreate(motion_update_task_function, "Motion", configMINIMAL_STACK_SIZE + 200, NULL, 3, &motion_task_handle));
     //UNUSED_VARIABLE(xTaskCreate(scheduler_task_function, "Scheduler", configMINIMAL_STACK_SIZE + 100, NULL, 3, &scheduler_task_handle));
     //UNUSED_VARIABLE(xTaskCreate(battery_meas_task_function, "Battery", configMINIMAL_STACK_SIZE + 100, NULL, 2, &batt_meas_task_handle));
-    // UNUSED_VARIABLE(xTaskCreate(zigbug_run_task_function, "Zigbug", configMINIMAL_STACK_SIZE + 200, NULL, 4, &zigbug_task_handle));
-    UNUSED_VARIABLE(xTaskCreate(pfm_task_function, "pfm", configMINIMAL_STACK_SIZE + 200, NULL, 4, &motor_pfm_task_handle));
+    UNUSED_VARIABLE(xTaskCreate(zigbug_run_task_function, "Zigbug", configMINIMAL_STACK_SIZE + 200, NULL, 3, &zigbug_task_handle));
     /* Activate deep sleep mode */
     SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
 

@@ -8,6 +8,7 @@
 #include "nrf_log_ctrl.h"
 #include "app_error.h"
 #include "nrf_drv_pwm.h"
+#include "nrf_drv_timer.h"
 
 #define TC214B_LEFT_IA  29 // Motor LEFT Input A --> MOTOR LEFT OA+
 #define TC214B_LEFT_IB  27 // Motor LEFT Input B --> MOTOR LEFT OB-
@@ -19,6 +20,9 @@
 #define CONFIG_MOTOR_RIGHT_PWM			(TC214B_RIGHT_IA)
 #define CONFIG_MOTOR_RIGHT_DIR			(TC214B_RIGHT_IB)
 
+#define MOTION_USE_PWM   0
+#define MOTION_USE_PFM   1
+#if MOTION_USE_PWM
 #define MOTOR_PWM_FREQ  (10000) // Hz max 10khz
 #define PWM_FREQ_SCALE  (1000000/100/MOTOR_PWM_FREQ) //PWM CLK = 1Mhz
 
@@ -140,3 +144,136 @@ void motor_stop(void)
 {
     nrf_drv_pwm_stop(&m_pwm_motor_instance, false);
 }
+
+#else
+
+#define MaxPFM 100
+volatile int g_left_dir_pin = TC214B_LEFT_IA;
+volatile int g_left_pfm_pin = TC214B_LEFT_IB;
+volatile int g_right_dir_pin = TC214B_RIGHT_IA;
+volatile int g_right_pfm_pin = TC214B_RIGHT_IB;
+volatile int g_pfm_left = 0;
+volatile int g_pfm_right = 0;
+volatile int g_pfm_dir_left = 0;
+volatile int g_pfm_dir_right = 0;
+
+void DoPfmLeft(int pp, int dir)
+{
+    static int pfmCnt = 0;
+
+    pfmCnt += pp;
+    if (pfmCnt > MaxPFM)
+    {
+        pfmCnt -= MaxPFM;
+        nrf_drv_gpiote_out_set(g_left_pfm_pin);
+    }
+    else
+    {
+        nrf_drv_gpiote_out_clear(g_left_pfm_pin);
+    }
+}
+
+void DoPfmRight(int pp, int dir)
+{
+    static int pfmCnt = 0;
+
+    pfmCnt += pp;
+    if (pfmCnt > MaxPFM)
+    {
+        pfmCnt -= MaxPFM;
+        nrf_drv_gpiote_out_set(g_right_pfm_pin);
+    }
+    else
+    {
+        nrf_drv_gpiote_out_clear(g_right_pfm_pin);
+    }
+}
+
+nrf_drv_timer_t pfm_timer = NRF_DRV_TIMER_INSTANCE(0);
+nrf_drv_timer_config_t pfm_timer_config = NRF_DRV_TIMER_DEFAULT_CONFIG;
+
+void pfm_timer_handle(nrf_timer_event_t event_type, void * p_context)
+{
+    switch (event_type)
+    {
+        case NRF_TIMER_EVENT_COMPARE0:
+            DoPfmLeft(g_pfm_left, g_pfm_dir_left);
+            DoPfmRight(g_pfm_right, g_pfm_dir_right);
+            break;
+
+        default:
+            //Do nothing.
+            break;
+    }
+}
+
+void motor_init(void)
+{
+    /* If not initialized gpiote model, init is */
+    if(!nrf_drv_gpiote_is_init())
+    {
+        APP_ERROR_CHECK(nrf_drv_gpiote_init());
+    }
+
+    //Motor pins
+    nrf_drv_gpiote_out_config_t motor_left_dir_pin_config = GPIOTE_CONFIG_OUT_SIMPLE(false);
+    nrf_drv_gpiote_out_config_t motor_right_dir_pin_config = GPIOTE_CONFIG_OUT_SIMPLE(false);
+    APP_ERROR_CHECK(nrf_drv_gpiote_out_init(CONFIG_MOTOR_LEFT_DIR, &motor_left_dir_pin_config));
+    APP_ERROR_CHECK(nrf_drv_gpiote_out_init(CONFIG_MOTOR_LEFT_PWM, &motor_left_dir_pin_config));
+    APP_ERROR_CHECK(nrf_drv_gpiote_out_init(CONFIG_MOTOR_RIGHT_DIR, &motor_left_dir_pin_config));
+    APP_ERROR_CHECK(nrf_drv_gpiote_out_init(CONFIG_MOTOR_RIGHT_PWM, &motor_left_dir_pin_config));
+    
+    //Timer init
+    uint32_t time_us = 2000; //Time(in miliseconds) between consecutive compare events.
+    uint32_t time_ticks;
+    nrf_drv_timer_init(&pfm_timer, &pfm_timer_config, pfm_timer_handle);
+    time_ticks = nrf_drv_timer_us_to_ticks(&pfm_timer, time_us);
+    nrf_drv_timer_extended_compare(
+         &pfm_timer, NRF_TIMER_CC_CHANNEL0, time_ticks, NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK, true);
+    nrf_drv_timer_enable(&pfm_timer);
+}
+
+void motor_start(int16_t left_speed, int16_t right_speed)
+{
+    nrf_drv_timer_resume(&pfm_timer);
+    if(left_speed < 0)
+    {
+        g_left_dir_pin = TC214B_LEFT_IA;
+        g_left_pfm_pin = TC214B_LEFT_IB;
+        g_pfm_dir_left = 1;
+        g_pfm_left = -MAX(-100, left_speed);
+    }
+    else
+    {
+        g_left_dir_pin = TC214B_LEFT_IB;
+        g_left_pfm_pin = TC214B_LEFT_IA;
+        g_pfm_dir_left = 0;
+        g_pfm_left = MIN(100, left_speed);
+    }
+    nrf_drv_gpiote_out_clear(g_left_dir_pin);
+    nrf_drv_gpiote_out_clear(g_left_pfm_pin);
+
+    if(right_speed < 0)
+    {
+        g_right_dir_pin = TC214B_RIGHT_IA;
+        g_right_pfm_pin = TC214B_RIGHT_IB;
+        g_pfm_dir_right = 1;
+        g_pfm_right = -MAX(-100, right_speed);
+    }
+    else
+    {
+        g_right_dir_pin = TC214B_RIGHT_IB;
+        g_right_pfm_pin = TC214B_RIGHT_IA;
+        g_pfm_dir_right = 0;
+        g_pfm_right = MIN(100, right_speed);
+    }
+    nrf_drv_gpiote_out_clear(g_right_dir_pin);
+    nrf_drv_gpiote_out_clear(g_right_pfm_pin);
+}
+
+void motor_stop(void)
+{
+    nrf_drv_timer_pause(&pfm_timer);
+}
+
+#endif
