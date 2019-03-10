@@ -22,9 +22,12 @@
     </folder>
     <configuration
       Name="nrf52832_xxaa"
-      c_preprocessor_definitions="BOARD_PCA10040;BSP_DEFINES_ONLY;CONFIG_GPIO_AS_PINRESET;NRF52;NRF52832_XXAA;NRF52_PAN_12;NRF52_PAN_15;NRF52_PAN_20;NRF52_PAN_31;NRF52_PAN_36;NRF52_PAN_51;NRF52_PAN_54;NRF52_PAN_55;NRF52_PAN_58;NRF52_PAN_64;NRF52_PAN_74;SWI_DISABLE0;NRF_LOG_USES_RTT=1;USE_I2C_2V8;CONFIG_NFCT_PINS_AS_GPIOS;EMPL_TARGET_NRF52;MPU9250;EMPL"
-      c_user_include_directories="$(PackagesDir)/CMSIS_4/CMSIS/Include;./config;./Device/nRF52;./Device/nRF52/Drivers/delay;./Device/nRF52/Core;./Device/nRF52/Drivers/common;./Library/util;./Device/nRF52/SoftDevice/headers;./Device/nRF52/Drivers/clock;./Device/nRF52/Drivers/nrf_soc_nosd;./Device/nRF52/Drivers/uart;./Device/nRF52/Drivers/hal;./Device/nRF52/Drivers/timer;./Log;./Log/src;./Device/nRF52/Drivers/spi_master;./Device/nRF52/Drivers/gpiote;./Board/NeoPixels;./Device/nRF52/Drivers/i2s;./board/audio;./Debug/segger_rtt;./board/micphone;./device/nRF52/Drivers/pdm;./device/nRF52/Drivers/pwm;./device/nRF52/Drivers/saadc;./board/motor;./board/battery;./Library/timer;./Library/scheduler;./board/drivers/vl53l0x;./board/drivers/vl6180x;./device/nRF52/Drivers/twi_master;./board/vision;./rtos/freertos/config;./rtos/freertos/portable/CMSIS/nrf52;./rtos/freertos/portable/GCC/nrf52;./rtos/freertos/source/include;./board/drivers/inv_mpu;./board/motion;./Library/control"
-      cpp_enable_rtti="Yes" />
+      c_preprocessor_definitions="BLE_STACK_SUPPORT_REQD;BOARD_PCA10040;BSP_DEFINES_ONLY;CONFIG_GPIO_AS_PINRESET;NRF52;NRF52832_XXAA;NRF52_PAN_12;NRF52_PAN_15;NRF52_PAN_20;NRF52_PAN_31;NRF52_PAN_36;NRF52_PAN_51;NRF52_PAN_54;NRF52_PAN_55;NRF52_PAN_58;NRF52_PAN_64;NRF52_PAN_74;SWI_DISABLE0;NRF_LOG_USES_RTT=1;USE_I2C_2V8;CONFIG_NFCT_PINS_AS_GPIOS;EMPL_TARGET_NRF52;MPU9250;EMPL;NRF_SD_BLE_API_VERSION=4;S134;SWI_DISABLE0;SOFTDEVICE_PRESENT"
+      c_user_include_directories="$(PackagesDir)/CMSIS_4/CMSIS/Include;./config;./Device/nRF52;./Device/nRF52/Drivers/delay;./Device/nRF52/Core;./Device/nRF52/SoftDevice/common/softdevice_handler;./Device/nRF52/Drivers/common;./Library/util;./Library/fstorage;./Library/experimental_section_vars;./Device/nRF52/SoftDevice/headers;./Device/nRF52/Drivers/clock;./Device/nRF52/Drivers/nrf_soc_nosd;./Device/nRF52/Drivers/uart;./Device/nRF52/Drivers/hal;./Device/nRF52/Drivers/timer;./Log;./Log/src;./Device/nRF52/Drivers/spi_master;./Device/nRF52/Drivers/gpiote;./Board/NeoPixels;./Device/nRF52/Drivers/i2s;./board/audio;./Debug/segger_rtt;./board/micphone;./board/ble;./device/nRF52/Drivers/pdm;./device/nRF52/Drivers/pwm;./device/nRF52/Drivers/saadc;./board/motor;./board/battery;./Library/timer;./Library/scheduler;./Library/ble/common;./Library/ble/ble_advertising;./Library/ble/nrf_ble_gatt;./Library/ble/ble_services/ble_nus;./board/drivers/vl53l0x;./board/drivers/vl6180x;./device/nRF52/Drivers/twi_master;./board/vision;./rtos/freertos/config;./rtos/freertos/portable/CMSIS/nrf52;./rtos/freertos/portable/GCC/nrf52;./rtos/freertos/source/include;./board/drivers/inv_mpu;./board/motion;./Library/control"
+      cpp_enable_rtti="Yes"
+      debug_additional_load_file="$(ProjectDir)/Device/nRF52/SoftDevice/hex/s132_nrf52_4.0.2_softdevice.hex"
+      external_load_file_type="Detect"
+      linker_section_placement_macros="FLASH_START=0x1f000;SRAM_START=0x200025f8" />
     <configuration
       Name="External Keil"
       c_additional_options="--c99;--reduce_paths" />
@@ -36,6 +39,8 @@
     <folder Name="Device">
       <file file_name="./device/nRF52/Core/system_nrf52.c" />
       <file file_name="device/nRF52/Core/ses/ses_nrf52_startup.s" />
+      <file file_name="Device/nRF52/SoftDevice/common/softdevice_handler/softdevice_handler_appsh.c" />
+      <file file_name="Device/nRF52/SoftDevice/common/softdevice_handler/softdevice_handler.c" />
     </folder>
     <folder Name="nRF_Drivers">
       <file file_name="./Device/nRF52/Drivers/clock/nrf_drv_clock.c" />
@@ -62,6 +67,18 @@
         <configuration Name="nrf52832_xxaa" build_exclude_from_build="No" />
       </file>
       <file file_name="library/scheduler/app_scheduler.c" />
+      <file file_name="Library/ble/ble_advertising/ble_advertising.c">
+        <configuration Name="nrf52832_xxaa" build_exclude_from_build="No" />
+      </file>
+      <file file_name="Library/ble/nrf_ble_gatt/nrf_ble_gatt.c" />
+      <file file_name="Library/ble/ble_services/ble_nus/ble_nus.c" />
+      <file file_name="Library/fstorage/fstorage_nosd.c" />
+      <file file_name="Library/fstorage/fstorage.c" />
+      <file file_name="Library/experimental_section_vars/nrf_section_iter.c" />
+      <file file_name="Library/ble/common/ble_advdata.c" />
+      <file file_name="Library/ble/common/ble_conn_params.c" />
+      <file file_name="Library/ble/common/ble_conn_state.c" />
+      <file file_name="Library/ble/common/ble_srv_common.c" />
     </folder>
     <folder Name="nRF_Log">
       <file file_name="./Log/src/nrf_log_backend_serial.c" />
@@ -113,6 +130,7 @@
         <file file_name="Board/motion/quaternion.c" />
         <file file_name="Board/motion/FastMath.c" />
       </folder>
+      <file file_name="Board/ble/ble_uart.c" />
     </folder>
     <folder Name="RTOS">
       <file file_name="rtos/freertos/source/croutine.c" />

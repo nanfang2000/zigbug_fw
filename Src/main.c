@@ -70,6 +70,8 @@
 #include "motion.h"
 #include "pid.h"
 
+#include "ble_uart.h"
+
 // #define LOCAL_DEBUG
 #include "debug.h"
 
@@ -521,8 +523,9 @@ int main(void)
  {
     lfclk_config();
     APP_SCHED_INIT(SCHED_MAX_EVENT_DATA_SIZE, SCHED_QUEUE_SIZE);
-    // app_timer_init();
+    app_timer_init();
     /* Configure board. */
+    ble_init();
     //bsp_board_leds_init();
     nrf_drv_gpiote_init();
     audio_init();
@@ -563,6 +566,7 @@ int main(void)
         //audio_play(DATA, SOUND_LENGTH);
         //DEBUG_PRINTF(0, "Battery:%d%%\n", batt_meas_get_level());
        //mic_listen(0, listen_buffer, 2000);
+       power_manage();
        app_sched_execute();
     }
 }
