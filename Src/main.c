@@ -527,47 +527,47 @@ int main(void)
     /* Configure board. */
     ble_init();
     //bsp_board_leds_init();
-    nrf_drv_gpiote_init();
-    audio_init();
-    mic_init();
-    //vision_init();
-    motor_init();
-    motor_start(-10, 10);
-    // while(1)
-    // {
-    // motor_start(100, 100);
-    // nrf_delay_ms(2);
-    // motor_start(0, 0);
-    // nrf_delay_ms(8);
-    // }
-    //motion_init();
-    //batt_meas_init(NULL);
-    //batt_meas_enable(5000);
-    //motor_start(-SPEED, -SPEED);
-    neopixel_init(&m_body_leds, 1, &neopixels_spi_instance);
-    // enable_breath_led(1000);
-    /* Toggle LEDs. */
-    /* Create task for LED0 blinking with priority set to 2 */
-    UNUSED_VARIABLE(xTaskCreate(led_toggle_task_function, "LED0", configMINIMAL_STACK_SIZE + 100, NULL, 1, &led_toggle_task_handle));
-
-    UNUSED_VARIABLE(xTaskCreate(vision_task_function, "VISION", configMINIMAL_STACK_SIZE + 200, NULL, 4, &vision_task_handle));
-    //UNUSED_VARIABLE(xTaskCreate(motion_update_task_function, "Motion", configMINIMAL_STACK_SIZE + 200, NULL, 3, &motion_task_handle));
-    //UNUSED_VARIABLE(xTaskCreate(scheduler_task_function, "Scheduler", configMINIMAL_STACK_SIZE + 100, NULL, 3, &scheduler_task_handle));
-    //UNUSED_VARIABLE(xTaskCreate(battery_meas_task_function, "Battery", configMINIMAL_STACK_SIZE + 100, NULL, 2, &batt_meas_task_handle));
-    UNUSED_VARIABLE(xTaskCreate(zigbug_run_task_function, "Zigbug", configMINIMAL_STACK_SIZE + 200, NULL, 3, &zigbug_task_handle));
-    /* Activate deep sleep mode */
-    SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
-
-    /* Start FreeRTOS scheduler. */
-    vTaskStartScheduler();
+//    nrf_drv_gpiote_init();
+//    audio_init();
+//    mic_init();
+//    //vision_init();
+//    motor_init();
+//    motor_start(-10, 10);
+//    // while(1)
+//    // {
+//    // motor_start(100, 100);
+//    // nrf_delay_ms(2);
+//    // motor_start(0, 0);
+//    // nrf_delay_ms(8);
+//    // }
+//    //motion_init();
+//    //batt_meas_init(NULL);
+//    //batt_meas_enable(5000);
+//    //motor_start(-SPEED, -SPEED);
+//    neopixel_init(&m_body_leds, 1, &neopixels_spi_instance);
+//    // enable_breath_led(1000);
+//    /* Toggle LEDs. */
+//    /* Create task for LED0 blinking with priority set to 2 */
+//    UNUSED_VARIABLE(xTaskCreate(led_toggle_task_function, "LED0", configMINIMAL_STACK_SIZE + 100, NULL, 1, &led_toggle_task_handle));
+//
+//    UNUSED_VARIABLE(xTaskCreate(vision_task_function, "VISION", configMINIMAL_STACK_SIZE + 200, NULL, 4, &vision_task_handle));
+//    //UNUSED_VARIABLE(xTaskCreate(motion_update_task_function, "Motion", configMINIMAL_STACK_SIZE + 200, NULL, 3, &motion_task_handle));
+//    //UNUSED_VARIABLE(xTaskCreate(scheduler_task_function, "Scheduler", configMINIMAL_STACK_SIZE + 100, NULL, 3, &scheduler_task_handle));
+//    //UNUSED_VARIABLE(xTaskCreate(battery_meas_task_function, "Battery", configMINIMAL_STACK_SIZE + 100, NULL, 2, &batt_meas_task_handle));
+//    UNUSED_VARIABLE(xTaskCreate(zigbug_run_task_function, "Zigbug", configMINIMAL_STACK_SIZE + 200, NULL, 3, &zigbug_task_handle));
+//    /* Activate deep sleep mode */
+//    SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
+//
+//    /* Start FreeRTOS scheduler. */
+//    vTaskStartScheduler();
 
     while (true)
     {
         //audio_play(DATA, SOUND_LENGTH);
         //DEBUG_PRINTF(0, "Battery:%d%%\n", batt_meas_get_level());
        //mic_listen(0, listen_buffer, 2000);
-       power_manage();
-       app_sched_execute();
+      power_manage();
+//       app_sched_execute();
     }
 }
 
