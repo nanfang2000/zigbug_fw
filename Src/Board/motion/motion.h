@@ -16,6 +16,7 @@ uint32_t motion_read_raw(motion_raw_t *data);
 
 uint32_t motion_update(motion_raw_t *data);
 motion_data_t* motion_get_data(void);
+void motion_reset(void);
 
 #ifdef  __cplusplus
 }  

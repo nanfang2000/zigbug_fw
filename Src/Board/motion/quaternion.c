@@ -279,6 +279,7 @@ void Quaternion_getEulerAngles(float *q, float* rpy)
     //rpy[1] = Quaternion_radiansToDegrees(-atan((2.0f * (q[1] * q[3] + q[0] * q[2])) / FastSqrt(1.0f - pow((2.0f * q[1] * q[3] + 2.0f * q[0] * q[2]), 2.0f))));
     rpy[1] = Quaternion_radiansToDegrees(FastAsin(-2.0f * (q[1] * q[3] - q[0] * q[2])));
     rpy[2] = Quaternion_radiansToDegrees(FastAtan2(2.0f * (q[1] * q[2] - q[0] * q[3]), 2.0f * q[0] * q[0] - 1.0f + 2.0f * q[1] * q[1]));
+	rpy[2] *= 10;//??
 }
 #else
 void Quaternion_getEulerAngles(float *q, float* rpy)

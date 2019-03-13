@@ -35,7 +35,7 @@ int motion_processor_initialized = 0;
 /* Parameters */
 motion_processor_config_t motion_processor_config;
 
-void motion_processor_init(const motion_processor_config_t * config)
+void motion_processor_init(motion_processor_config_t * config)
 {
     m_lastTimeStamp = 0;
     motion_processor_initialized = 0;
@@ -45,9 +45,7 @@ void motion_processor_init(const motion_processor_config_t * config)
 
 void motion_processor_reset()
 {
-    AHRS_Reset();
-    motion_processor_initialized = 0;
-    m_lastTimeStamp = 0;
+    motion_processor_init(&motion_processor_config);
 }
 
 void motion_processor_initBaseline()

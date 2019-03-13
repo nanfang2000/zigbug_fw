@@ -46,7 +46,7 @@
 
 #ifndef __MACROS_COMMON_H__
 #define __MACROS_COMMON_H__
-
+#if defined(NRF_LOG_USES_RTT) && NRF_LOG_USES_RTT == 1
 #include "SEGGER_RTT.h"
 
 /**@brief global debug flag will enable debug print from all files
@@ -71,7 +71,30 @@ if ((err_code) != NRF_SUCCESS)                                                  
     __FILE__, __LINE__, err_code);                                                                 \
     return (err_code);                                                                             \
 }
+#else
+#include "uart.h"
+/**@brief global debug flag will enable debug print from all files
+ */
+#ifdef GLOBAL_DEBUG
+    #define LOCAL_DEBUG
+#endif
 
+#ifdef LOCAL_DEBUG
+    #define DEBUG_PRINTF    (void)my_printf
+#else
+    #define DEBUG_PRINTF(...)
+#endif
+
+/**@brief Check if the error code is equal to NRF_SUCCESS, if not return the error code.
+ */
+#define RETURN_IF_ERROR(err_code)                                                                  \
+if ((err_code) != NRF_SUCCESS)                                                                     \
+{                                                                                                  \
+    (void)my_printf(0, "ERROR. Returned in file: %s, line: %d, with error code %d \r\n",              \
+    __FILE__, __LINE__, err_code);                                                                 \
+    return (err_code);                                                                             \
+}
+#endif
 /**@brief Check if the input pointer is NULL, if so it returns NRF_ERROR_NULL.
  */
 #define NULL_PARAM_CHECK(param)                                                                    \

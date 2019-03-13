@@ -69,6 +69,7 @@
 #include "timers.h"
 #include "motion.h"
 #include "pid.h"
+#include "uart.h"
 
 // #define LOCAL_DEBUG
 #include "debug.h"
@@ -309,7 +310,7 @@ void run_with_barrier_detect(float target_angle, pid_t *pid, pid_t *pid_barrier_
 
     if (barrier_force_left == 0 && barrier_force_right == 0 && barrier_force_front == 0 && barrier_force_back == 0)
     {
-        target_angle = motion_get_data()->euler.yaw * 10;
+        target_angle = motion_get_data()->euler.yaw;
         pid_init(pid, 0.3, 0.001, 1.0);
         pid_init(pid_barrier_left, 0.2, 0.005, 7.0);
         pid_init(pid_barrier_right, 0.2, 0.005, 7.0);
@@ -320,7 +321,7 @@ void run_with_barrier_detect(float target_angle, pid_t *pid, pid_t *pid_barrier_
     else
     {
         int32_t speed = 20;
-        float cur_degree = motion_get_data()->euler.yaw * 10;
+        float cur_degree = motion_get_data()->euler.yaw;
         target_angle = cur_degree;
         if (barrier_force_left > 0)
         {
@@ -343,7 +344,7 @@ void run_with_barrier_detect(float target_angle, pid_t *pid, pid_t *pid_barrier_
         }
         for (int32_t i = 0; i < 50; i++)
         {
-            cur_degree = motion_get_data()->euler.yaw * 10;
+            cur_degree = motion_get_data()->euler.yaw;
             float next_motor1 = pid_process(pid, target_angle, cur_degree);
             float next_motor2 = 0;//pid_process(pid_barrier_right, 0, barrier_force_right);
             float next_motor3 = 0;//-pid_process(pid_barrier_left, 0, barrier_force_left);
@@ -358,7 +359,7 @@ void run_with_barrier_detect(float target_angle, pid_t *pid, pid_t *pid_barrier_
 
 void run_with_fixed_orientation(pid_t *pid, float target_angle)
 {
-    float cur_degree = motion_get_data()->euler.yaw * 10;
+    float cur_degree = motion_get_data()->euler.yaw;
     float next_motor = pid_process(pid, target_angle, cur_degree);
     // DEBUG_PRINTF(0, "deg:%d\n", (int32_t)cur_degree);
     motor_start(SPEED + (int16_t)next_motor, SPEED - (int16_t)next_motor);
@@ -382,6 +383,7 @@ void zigbug_stop(void)
         }
         vTaskDelay(10);
     }
+    motion_reset();
 }
 
 void zigbug_rotate(float degree)
@@ -389,12 +391,12 @@ void zigbug_rotate(float degree)
     pid_t pid_turn;
 
     int32_t degree_cnt = 0;
-    float target_angle = motion_get_data()->euler.yaw * 10;
+    float target_angle = motion_get_data()->euler.yaw;
     target_angle += degree;
     pid_init(&pid_turn, 0.5, 0.005, 7.0);
     for (int32_t i = 0; i < 200; i++)
     {
-        float cur_degree = motion_get_data()->euler.yaw * 10;
+        float cur_degree = motion_get_data()->euler.yaw;
         float next_motor1 = pid_process(&pid_turn, target_angle, cur_degree);
 
         if(next_motor1 > 30)
@@ -444,6 +446,7 @@ static void zigbug_run_task_function(void *pvParameter)
 #elif (TEST_NO1 == 2)
         run_with_fixed_orientation(&pid, target_angle);
 #else
+        my_printf("eye:%d,%d, front:%d\r\n", vision.dist_left_eye, vision.dist_right_eye, vision.dist_front );
         if(vision.dist_left_eye > 150 || vision.dist_right_eye > 150)
         {
             
@@ -453,6 +456,7 @@ static void zigbug_run_task_function(void *pvParameter)
             /* Wait for zigbug to rotate, checking degree */
             zigbug_rotate(90);
             target_angle = motion_get_data()->euler.yaw*10;
+            my_printf("target_angle1:%f\r\n", target_angle);
         }
         else
         {
@@ -469,12 +473,14 @@ static void zigbug_run_task_function(void *pvParameter)
                     vTaskDelay(100);
                     target_angle = motion_get_data()->euler.yaw*10;
                 }
-                run_with_fixed_orientation(&pid, target_angle);                    
+                run_with_fixed_orientation(&pid, target_angle);
+                my_printf("target_angle2:%f\r\n", target_angle);
 
             }
             else
             {
                 run_with_fixed_orientation(&pid, target_angle);
+                my_printf("target_angle3:%f\r\n", target_angle);
             }
             
             // run_with_barrier_detect(target_angle, &pid, &pid_barrier_left, &pid_barrier_right, &pid_front, &pid_back);
@@ -525,11 +531,13 @@ int main(void)
     /* Configure board. */
     //bsp_board_leds_init();
     nrf_drv_gpiote_init();
+    uart_init();
     audio_init();
     mic_init();
     //vision_init();
     motor_init();
     motor_start(-10, 10);
+    my_printf("ZigBug Starts!\r\n");
     // while(1)
     // {
     // motor_start(100, 100);
@@ -541,11 +549,11 @@ int main(void)
     //batt_meas_init(NULL);
     //batt_meas_enable(5000);
     //motor_start(-SPEED, -SPEED);
-    neopixel_init(&m_body_leds, 1, &neopixels_spi_instance);
+    //neopixel_init(&m_body_leds, 1, &neopixels_spi_instance);
     // enable_breath_led(1000);
     /* Toggle LEDs. */
     /* Create task for LED0 blinking with priority set to 2 */
-    UNUSED_VARIABLE(xTaskCreate(led_toggle_task_function, "LED0", configMINIMAL_STACK_SIZE + 100, NULL, 1, &led_toggle_task_handle));
+    //UNUSED_VARIABLE(xTaskCreate(led_toggle_task_function, "LED0", configMINIMAL_STACK_SIZE + 100, NULL, 1, &led_toggle_task_handle));
 
     UNUSED_VARIABLE(xTaskCreate(vision_task_function, "VISION", configMINIMAL_STACK_SIZE + 200, NULL, 4, &vision_task_handle));
     //UNUSED_VARIABLE(xTaskCreate(motion_update_task_function, "Motion", configMINIMAL_STACK_SIZE + 200, NULL, 3, &motion_task_handle));

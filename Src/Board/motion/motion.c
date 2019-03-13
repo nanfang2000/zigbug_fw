@@ -438,6 +438,10 @@ uint32_t motion_init(void)
     return NRF_SUCCESS;
 }
 
+void motion_reset(void)
+{
+    motion_processor_reset();
+}
 
 uint32_t motion_read_raw(motion_raw_t *data)
 {

@@ -15,7 +15,7 @@ typedef struct
     int integrateRotation;
 }motion_processor_config_t;
     
-void motion_processor_init(const motion_processor_config_t *);
+void motion_processor_init(motion_processor_config_t *);
 
 void motion_processor_reset();
 
