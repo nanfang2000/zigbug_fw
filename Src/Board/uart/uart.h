@@ -52,6 +52,7 @@
 
 void uart_init(void);
 void my_printf(const char *fmt, ...);
+uint8_t uart_get(void);
 
 #endif
 

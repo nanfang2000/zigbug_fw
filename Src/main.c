@@ -95,7 +95,7 @@ static const nrf_drv_spi_t neopixels_spi_instance = NRF_DRV_SPI_INSTANCE(0);
 #include "wav_1.h"
 static uint16_t listen_buffer[26000];
 
-#define SPEED 20
+#define SPEED 25
 
 uint32_t error_code;
 void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
@@ -435,6 +435,11 @@ static void zigbug_run_task_function(void *pvParameter)
             vTaskDelay(20);
             continue;
         }
+        // if (uart_get() != 's')
+        // {
+        //     vTaskDelay(20);
+        //     continue;
+        // }
 #if (TEST_NO1 == 0)
         float cur_degree = motion_get_data()->euler.yaw*10;
         float next_motor = pid_process(&pid, 90.f, cur_degree);
@@ -446,7 +451,7 @@ static void zigbug_run_task_function(void *pvParameter)
 #elif (TEST_NO1 == 2)
         run_with_fixed_orientation(&pid, target_angle);
 #else
-        my_printf("eye:%d,%d, front:%d\r\n", vision.dist_left_eye, vision.dist_right_eye, vision.dist_front );
+        // my_printf("eye:%d,%d, front:%d\r\n", vision.dist_left_eye, vision.dist_right_eye, vision.dist_front );
         if(vision.dist_left_eye > 150 || vision.dist_right_eye > 150)
         {
             
@@ -455,32 +460,52 @@ static void zigbug_run_task_function(void *pvParameter)
             vTaskDelay(500);
             /* Wait for zigbug to rotate, checking degree */
             zigbug_rotate(90);
-            target_angle = motion_get_data()->euler.yaw*10;
-            my_printf("target_angle1:%f\r\n", target_angle);
+            target_angle = motion_get_data()->euler.yaw;
+            // my_printf("target_angle1:%f\r\n", target_angle);
         }
         else
         {
-            if (vision.dist_front < 200)
+            if(vision.dist_left_eye < 40)
+            {
+                zigbug_stop();
+                vTaskDelay(100);
+                /* Wait for zigbug to rotate, checking degree */
+                zigbug_rotate(90);
+                zigbug_stop();
+                vTaskDelay(100);
+                target_angle = motion_get_data()->euler.yaw;
+            }
+            else if(vision.dist_right_eye < 40)
+            {
+                zigbug_stop();
+                vTaskDelay(100);
+                /* Wait for zigbug to rotate, checking degree */
+                zigbug_rotate(-90);
+                zigbug_stop();
+                vTaskDelay(100);
+                target_angle = motion_get_data()->euler.yaw;
+            }
+            else if (vision.dist_front < 100)
             {
                 /* Wait for zigbug to stop */
                 zigbug_stop();
                 vTaskDelay(500);
-                if(vision.dist_front < 200)
+                if(vision.dist_front < 100)
                 {
                     /* Wait for zigbug to rotate, checking degree */
                     zigbug_rotate(90);
                     zigbug_stop();
                     vTaskDelay(100);
-                    target_angle = motion_get_data()->euler.yaw*10;
+                    target_angle = motion_get_data()->euler.yaw;
                 }
                 run_with_fixed_orientation(&pid, target_angle);
-                my_printf("target_angle2:%f\r\n", target_angle);
+                // my_printf("target_angle2:%f\r\n", target_angle);
 
             }
             else
             {
                 run_with_fixed_orientation(&pid, target_angle);
-                my_printf("target_angle3:%f\r\n", target_angle);
+                // my_printf("target_angle3:%f\r\n", target_angle);
             }
             
             // run_with_barrier_detect(target_angle, &pid, &pid_barrier_left, &pid_barrier_right, &pid_front, &pid_back);
@@ -536,7 +561,7 @@ int main(void)
     mic_init();
     //vision_init();
     motor_init();
-    motor_start(-10, 10);
+    //motor_start(-10, 10);
     my_printf("ZigBug Starts!\r\n");
     // while(1)
     // {

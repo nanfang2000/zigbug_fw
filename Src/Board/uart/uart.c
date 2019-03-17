@@ -5,7 +5,7 @@
 #include "app_uart.h"
 #include "nrf_uart.h"
 #include "app_util_platform.h"
-#define RX_PIN_NUMBER  NRF_UART_PSEL_DISCONNECTED
+#define RX_PIN_NUMBER  22
 #define TX_PIN_NUMBER  24
 #define CTS_PIN_NUMBER NRF_UART_PSEL_DISCONNECTED
 #define RTS_PIN_NUMBER NRF_UART_PSEL_DISCONNECTED
@@ -67,6 +67,7 @@ void uart_init(void)
 #include <stdarg.h>
 #include <string.h>
 #include "nrf_delay.h"
+#include <stdint.h>
 
 void vprint(const char *fmt, va_list argp)
 {
@@ -87,4 +88,11 @@ void my_printf(const char *fmt, ...) // custom printf() function
     va_start(argp, fmt);
     vprint(fmt, argp);
     va_end(argp);
+}
+
+uint8_t uart_get(void)
+{
+    uint8_t byte;
+    app_uart_get(&byte);
+    return byte;
 }
