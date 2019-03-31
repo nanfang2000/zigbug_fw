@@ -95,7 +95,7 @@ static const nrf_drv_spi_t neopixels_spi_instance = NRF_DRV_SPI_INSTANCE(0);
 #include "wav_1.h"
 static uint16_t listen_buffer[26000];
 
-#define SPEED 25
+#define SPEED 15
 
 uint32_t error_code;
 void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
