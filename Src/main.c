@@ -367,7 +367,6 @@ void run_with_fixed_orientation(pid_t *pid, float target_angle)
 
 void run_with_openmv(pid_t *pid)
 {
-//    int x= (gpio_read() ?20:-20)+160;
     uint8_t tmp = uart_get();
     uint16_t x=160,y;
     if (tmp == 0xAA) {
@@ -381,7 +380,6 @@ void run_with_openmv(pid_t *pid)
     }
 
     float next_motor = pid_process(pid, 160, 320-x);
-    // DEBUG_PRINTF(0, "deg:%d\n", (int32_t)cur_degree);
     motor_start(SPEED + (int16_t)next_motor, SPEED - (int16_t)next_motor);
 }
 
