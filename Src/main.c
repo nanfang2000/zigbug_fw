@@ -365,6 +365,26 @@ void run_with_fixed_orientation(pid_t *pid, float target_angle)
     motor_start(SPEED + (int16_t)next_motor, SPEED - (int16_t)next_motor);
 }
 
+void run_with_openmv(pid_t *pid)
+{
+//    int x= (gpio_read() ?20:-20)+160;
+    uint8_t tmp = uart_get();
+    uint16_t x=160,y;
+    if (tmp == 0xAA) {
+      tmp = uart_get();
+      if(tmp == 0x55) {
+        uint8_t tm1 = uart_get();
+        uint8_t tm2 = uart_get();
+        x = (uint16_t)tm1+(((uint16_t)tm1)<<16);
+        y = uart_get() + ((uint16_t)uart_get()<<16);
+      }
+    }
+
+    float next_motor = pid_process(pid, 160, 320-x);
+    // DEBUG_PRINTF(0, "deg:%d\n", (int32_t)cur_degree);
+    motor_start(SPEED + (int16_t)next_motor, SPEED - (int16_t)next_motor);
+}
+
 void zigbug_stop(void)
 {
     /* Wait for zigbug to stop, checking ACC */
@@ -421,7 +441,7 @@ void zigbug_rotate(float degree)
     }
 }
 
-#define TEST_NO1  3
+#define TEST_NO1  2
 static void zigbug_run_task_function(void *pvParameter)
 {
     UNUSED_PARAMETER(pvParameter);
@@ -449,7 +469,8 @@ static void zigbug_run_task_function(void *pvParameter)
 #elif (TEST_NO1 == 1)
         run_with_barrier_detect(target_angle, &pid, &pid_barrier_left, &pid_barrier_right, &pid_front, &pid_back);
 #elif (TEST_NO1 == 2)
-        run_with_fixed_orientation(&pid, target_angle);
+//        run_with_fixed_orientation(&pid, target_angle);
+        run_with_openmv(&pid);
 #else
         // my_printf("eye:%d,%d, front:%d\r\n", vision.dist_left_eye, vision.dist_right_eye, vision.dist_front );
         if(vision.dist_left_eye > 150 || vision.dist_right_eye > 150)
@@ -562,7 +583,7 @@ int main(void)
     //vision_init();
     motor_init();
     //motor_start(-10, 10);
-    my_printf("ZigBug Starts!\r\n");
+//    my_printf("ZigBug Starts!\r\n");
     // while(1)
     // {
     // motor_start(100, 100);

@@ -5,6 +5,8 @@
 #include "app_uart.h"
 #include "nrf_uart.h"
 #include "app_util_platform.h"
+#include "nrf_drv_gpiote.h"
+
 #define RX_PIN_NUMBER  22
 #define TX_PIN_NUMBER  24
 #define CTS_PIN_NUMBER NRF_UART_PSEL_DISCONNECTED
@@ -22,7 +24,7 @@ void uart_event_handle(app_uart_evt_t * p_event)
     switch (p_event->evt_type)
     {
         case APP_UART_DATA_READY:
-            UNUSED_VARIABLE(app_uart_get(&data_array[index]));
+//            UNUSED_VARIABLE(app_uart_get(&data_array[index]));
             index++;
             index = 0;
             break;
@@ -38,6 +40,9 @@ void uart_event_handle(app_uart_evt_t * p_event)
         default:
             break;
     }
+}
+
+void gpio_event(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action){
 }
 
 void uart_init(void)
@@ -61,6 +66,8 @@ void uart_init(void)
                        APP_IRQ_PRIORITY_LOWEST,
                        err_code);
     APP_ERROR_CHECK(err_code);
+//nrf_drv_gpiote_in_config_t config = GPIOTE_CONFIG_IN_SENSE_TOGGLE(false);
+//nrf_drv_gpiote_in_init(22, &config,gpio_event);
 }
 
 #include <stdio.h>
@@ -93,6 +100,14 @@ void my_printf(const char *fmt, ...) // custom printf() function
 uint8_t uart_get(void)
 {
     uint8_t byte;
-    app_uart_get(&byte);
+    uint32_t error=NRF_ERROR_NOT_FOUND;
+    while (error == NRF_ERROR_NOT_FOUND) {
+      error = app_uart_get(&byte);
+    }
     return byte;
+}
+
+uint8_t gpio_read(void)
+{
+  return nrf_drv_gpiote_in_is_set(22);
 }
